@@ -12,15 +12,13 @@ The GoPilot is just another browser-based VFR map for Microsoft's Flight Simulat
 * Teleport Service
     * Pick a point on the map, select the desired altitude, heading and airspeed and off you go
 
-## How do I run the GoPilot?
+## Releases
 
-There are no releases yet. At the moment you can only run the program from the command line.
+Download the latest version [here](https://github.com/grumpypixel/msfs2020-gopilot/releases)
 
-Windows Command Prompt:
-```console
-$ build.bat
-$ gopilot.exe
-```
+## How do I build GoPilot myself?
+
+Assuming you have installed Go on your machine and cloned/downloaded the repo, you can build & run GoPilot as follows:
 
 Bash:
 ```console
@@ -34,7 +32,11 @@ $ CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o gopilot.exe gopilot/main.g
 $ ./gopilot.exe
 ```
 
-Note: You should start GoPilot on the same Windows machine your Simulator is running.
+Windows Command Prompt:
+```console
+$ build.bat
+$ gopilot.exe
+```
 
 ## GoPilot command-line options
 
@@ -54,7 +56,7 @@ $ gopilot.exe --name POTATOSQUAD --searchpath ../.. --address 0.0.0.13370 --time
 
 The gopilot.exe starts a local web server which you can connect to with a browser.
 
-So open the browser of your choice and type the following into the address bar:
+Now open the browser of your choice and type the following into the address bar:
 
 ```console
 http://localhost:8888/
@@ -73,6 +75,8 @@ The following web server routes are available:
 * `/teleport` opens the Teleport Service. Be advised not to teleport yourself into the ground mistakenly.
 * `/mehmap` opens a plain & simple map without distractions. (So no HUD. No nothing. Meh.)
 * `/setdata` opens an *experimental* page where you can manually set data on the *sim object*. DO NOT USE THIS if you don't know what you're doing. This might (and probably will) CRASH your simulator. Seriously.
+* `/simvars` display all registered simulation variables (no auto-update)
+* `/debug` display debug information (also no auto-update)
 
 Examples:
 * `http://localhost:8888/vfrmap` or simply: `http://localhost:8888`

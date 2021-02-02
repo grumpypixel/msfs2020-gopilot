@@ -41,6 +41,8 @@ const (
 	defaultConnectionName    = "GoPilot"
 	defaultServerAddress     = "0.0.0.0:8888"
 	defaultSearchPath        = "."
+	githubRoot               = "http://github.com/grumpypixel/msfs2020-gopilot/"
+	githubReleases           = "http://github.com/grumpypixel/msfs2020-gopilot/releases"
 	defaultConnectionTimeout = 600
 	connectRetrySeconds      = 1
 	requestDataInterval      = time.Millisecond * 250
@@ -67,6 +69,7 @@ func init() {
 }
 
 func main() {
+	fmt.Printf("\nWelcome to %s\nProject page: %s\nReleases: %s\n\n", appTitle, githubRoot, githubReleases)
 	parseParameters()
 	locateLibrary(params.searchPath)
 
@@ -88,7 +91,7 @@ func parseParameters() {
 func locateLibrary(additionalSearchPath string) {
 	if simconnect.LocateLibrary(additionalSearchPath) == false {
 		fullpath := path.Join(additionalSearchPath, simconnect.SimConnectDLL)
-		fmt.Printf("DLL not found in given search paths.\nUnpacking library to: %s\n", fullpath)
+		fmt.Printf("DLL not found in given search paths\nUnpacking library to: %s\n", fullpath)
 		if err := simconnect.UnpackDLL(fullpath); err != nil {
 			fmt.Println("Unable to unpack DLL error:", err)
 			return
@@ -150,7 +153,7 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 	assetsDir := "/assets/"
 	webServer.Run(routes, assetsDir)
 
-	fmt.Println("Web Server listening on address", address)
+	fmt.Println("Web Server listening on", address)
 	fmt.Println("Your network interfaces:")
 	webServer.ListNetworkInterfaces()
 }
@@ -170,7 +173,7 @@ func (app *App) connect(name string, timeoutSeconds int64) error {
 			count++
 			if err := app.mate.Open(name); err != nil {
 				if count%10 == 0 {
-					fmt.Printf("...attempts: %d\n", count)
+					fmt.Printf("Connection attempts... %d\n", count)
 				}
 			} else {
 				return nil
@@ -210,7 +213,6 @@ func (app *App) handleSocketMessages() {
 	for {
 		select {
 		case event := <-app.socket.EventReceiver:
-			fmt.Println("main eventreceiver")
 			eventType := event.Type
 			switch eventType {
 			case websockets.SocketEventConnected:
