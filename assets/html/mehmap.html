@@ -1,0 +1,389 @@
+<!doctype html>
+<!--[if lte IE 9]>
+<html class="ie" lang="en">
+<![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en">
+<!--<![endif]-->
+<!-- <html> -->
+<head>
+<meta charset="utf-8">
+<title>The Meh Map - Plain & Simple</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+<script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
+<script src="/assets/js/leaflet-bing-layer.js"></script>
+<script src="/assets/js/leaflet-rotated-marker.js"></script>
+<script src="/assets/js/leaflet-grayscale.js"></script>
+<script src="/assets/js/svg-icons-outlined.js"></script>
+<script src="/assets/js/url-params.js"></script>
+<script src="/assets/js/utils.js"></script>
+<style>
+    * {
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+    }
+    #center_on_plane {
+        margin: 0 0 4px 0;
+        cursor: pointer;
+    }
+    #map {
+        background-color: gray;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+    #overlay_plane {
+        position: absolute;
+        bottom: 0;
+        left: 10;
+        min-width: 80px;
+        margin: 4px;
+        padding: 4px 8px 4px 8px;
+        border-radius: 8px;
+        color: white;
+        text-align: center;
+        font-size: 1.0em;
+        background-color: rgba(0,0,0,0.75);
+        z-index: 3;
+    }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="overlay_plane">
+    <div id="center_on_plane"  title="Click to center on plane">
+        <i class="fa fa-plane" style="font-size: 32px;color:white; margin: 4px;" onclick="handleCenterOnPlaneClick(this)"></i>
+    </div>
+    <div>
+        <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick(this)" />
+        <label></label>Follow</label>
+    </div>
+</div>
+<script>
+const constants = {
+    mapFormat: 'image/png',
+    mapInitialZoom: 13,
+    mapMarkerOpacity: 0.75,
+    mapMaxZoom: 18,
+    mapMinZoom: 1,
+    mapTileSize: 256,
+    mapZoomOffset: 0,
+    planeSize: 64,
+    webSocketSupport: 'WebSocket' in window,
+    webSocketAddress: 'ws://' + window.location.hostname + ':' + window.location.port + '/ws',
+};
+
+const vars = {
+    followPlane: true,
+    lastData: {
+        heading_true: 0,
+        latitude: 0,
+        longitude: 0,
+    },
+    map: null,
+    mapMarker: null,
+    planeIcons: {},
+    planeMarker: null,
+    socket: null,
+    urlParams: {},
+};
+
+const baseMapNames = {
+    openStreetMap: 'OpenStreetMap',
+};
+
+const planeIconGetters = {
+    black: getSvgPlaneIconBlackWhite,
+    gray: getSvgPlaneIconGrayBlack,
+    green: getSvgPlaneIconGreenBlack,
+    white: getSvgPlaneIconWhiteBlack,
+};
+
+const elements = {
+    followPlane: null,
+};
+
+const dataTypes = {
+    int32: "int32",
+    int64: "int64",
+    float32: "float32",
+    float64: "float64",
+    string256: "string256",
+}
+
+const monikers = {
+    headingTrue: 'heading_true',
+    latitude: 'latitude',
+    longitude: 'longitude',
+};
+
+const units = {
+    degrees: 'degrees',
+    feet: 'feet',
+    ft_min: 'ft/min',
+    knot: 'knot',
+    percent: 'percent',
+};
+
+window.onload = () => {
+    console.log('#onload');
+    vars.urlParams = getUrlParameters();
+
+    console.log(constants);
+    console.log(vars);
+
+    if (constants.webSocketSupport === true) {
+        vars.socket = new WebSocket(constants.webSocketAddress);
+        handleWebSocketEvents();
+    }
+
+    initElements();
+
+    const latLng = getRandomAirport();
+    const latitude = latLng[0];
+    const longitude = latLng[1];
+
+    initMap(latitude, longitude);
+    handleMapEvents();
+
+    initPlaneIcons();
+    initPlaneMarker(latitude, longitude);
+
+    vars.lastData.latitude = latitude;
+    vars.lastData.longitude = longitude;
+}
+
+window.onbeforeunload = () => {
+    console.log('#onbeforeclose');
+    if (constants.webSocketSupport === true) {
+        deregister();
+        vars.socket.onclose = () => {};
+        vars.socket.close();
+    }
+};
+
+function initElements() {
+    elements.followPlane = document.getElementById('follow_plane');
+    updateFollowPlaneElement(vars.followPlane);
+}
+
+function initMap(latitude, longitude) {
+    const format = constants.mapFormat;
+    const maxZoom =constants.mapMaxZoom;
+    const minZoom = constants.mapMinZoom;
+    const tileSize = constants.mapTileSize;
+    const zoomOffset = constants.mapZoomOffset;
+
+    const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const map = new L.Map('map', {
+        layers: osm,
+        center: [latitude, longitude],
+        zoom: constants.mapInitialZoom,
+        attributionControl: false,
+        zoomControl: false,
+    });
+
+    const attrib = L.control.attribution({position: 'bottomright'});
+    attrib.addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>');
+    attrib.addAttribution('&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>');
+    attrib.addTo(map);
+
+    const maps = {};
+    maps[baseMapNames.openStreetMap] = osm;
+    osm.addTo(map);
+
+    vars.map = map;
+}
+
+function initPlaneIcons() {
+    const size = getUrlParam(vars.urlParams, 'plane_size', constants.planeSize);
+    for (const [name, foo] of Object.entries(planeIconGetters)) {
+        const svg = foo();
+        const icon = createLeafletIcon(svg, size);
+        vars.planeIcons[name] = icon;
+    }
+}
+
+function initPlaneMarker(latitude, longitude) {
+    const latLngPos = [latitude, longitude];
+    const rotation = 0;
+    let icon = vars.planeIcons.white;
+    vars.planeMarker = createPlaneMarker(latLngPos, rotation, icon);
+    vars.planeMarker.addTo(vars.map);
+}
+
+function createPlaneMarker(latLngPosition, rotation, icon) {
+    return L.marker(latLngPosition, {
+        icon: icon,
+        rotationAngle: rotation,
+        rotationOrigin: 'center',
+    });
+}
+
+function createLeafletIcon(svg, size) {
+    const iconSize = [size, size];
+    const iconUrl = encodeURI('data:image/svg+xml,' + svg).replace('#', '%23');
+    return L.icon({iconUrl, iconSize});
+}
+
+function createMapMarker(latitude, longitude) {
+    if (vars.mapMarker !== null) {
+        vars.map.removeLayer(vars.mapMarker);
+    }
+
+    const marker = L.marker([latitude, longitude]);
+    const initialContent = '<div align="center"><b>Hey!</b></div>';
+    marker.bindPopup(initialContent);
+
+    marker.on('click', (e) => {
+        const coordinates = latitude + '&deg;&nbsp;' + longitude + '&deg;';
+        const content =
+            '<div align="center"><b>Welcome!</b><br>'
+            + '<i class="fa fa-map-marker" style="font-size: 16px;color:black">&nbsp;</i>'
+            + '<span>' + coordinates + '</span><br><br>'
+            + '<a href="javascript:void(0)" onclick="removeMapMarker();">[Remove]</a><br>'
+            + '</div>';
+        marker._popup.setContent(content);
+        marker.openPopup();
+    });
+
+    marker.addTo(vars.map);
+    vars.mapMarker = marker;
+}
+
+function removeMapMarker() {
+    vars.map.removeLayer(vars.mapMarker);
+    vars.mapMarker = null;
+}
+
+function handleMapEvents() {
+    vars.map.on('dragstart', (e) => {
+        vars.followPlane = false;
+        updateFollowPlaneElement(vars.followPlane);
+    });
+    vars.map.on('click', (e) => {
+        const pos = e.latlng;
+        createMapMarker(pos.lat, pos.lng);
+    });
+}
+
+function handleWebSocketEvents() {
+    vars.socket.onopen = () => {
+        console.log('connected.');
+        register();
+    };
+    vars.socket.onclose = () => {
+        console.log('disconnected.');
+    };
+    vars.socket.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        handleMessage(msg);
+    };
+}
+
+function handleMessage(msg) {
+    if (msg.hasOwnProperty("data") === false) {
+        return
+    }
+
+    const data = msg["data"]
+    const hasHeadingTrue = data.hasOwnProperty(monikers.headingTrue);
+    const hasLatitude = data.hasOwnProperty(monikers.latitude);
+    const hasLongitude = data.hasOwnProperty(monikers.longitude);
+
+    if (hasLatitude === true&& hasLongitude === true) {
+        if (vars.followPlane === true) {
+            updateMap(data.latitude, data.longitude);
+        }
+        if (hasHeadingTrue === true) {
+            updatePlaneMarker(data.latitude, data.longitude, data.heading_true);
+        }
+    }
+    vars.lastData = msg.data;
+}
+
+function register() {
+    data = getSimVars()
+    meta = "nometa",
+    sendMessage('register', data, meta);
+}
+
+function deregister() {
+    let vars = [];
+    for (simVar of getSimVars()) {
+        vars.push({name: simVar.name});
+    }
+    sendMessage('deregister', {vars}, "");
+}
+
+function sendMessage(name, data, meta) {
+    const msg = {type: name, data, meta, debug: 0};
+    console.log(JSON.stringify(msg));
+    sendData(JSON.stringify(msg));
+}
+
+function sendData(data) {
+    if (constants.webSocketSupport === true) {
+        vars.socket.send(data);
+    }
+}
+
+function updateMap(latitude, longitude) {
+    const latLngPos = [latitude, longitude];
+    vars.map.panTo(latLngPos);
+}
+
+function updatePlaneMarker(latitude, longitude, heading) {
+    const latLngPos = [latitude, longitude];
+    vars.planeMarker.setLatLng(latLngPos);
+    vars.planeMarker.setRotationAngle(heading);
+}
+
+function updateFollowPlaneElement(checked) {
+    elements.followPlane.checked = checked;
+}
+
+function handleFollowPlaneClick(checkbox) {
+    vars.followPlane = checkbox.checked;
+    if (vars.followPlane === true) {
+        const latLngPos = [vars.lastData.latitude, vars.lastData.longitude];
+        vars.map.setView(latLngPos, vars.map.getZoom());
+    }
+    updateFollowPlaneElement(vars.followPlane);
+}
+
+function handleCenterOnPlaneClick(button) {
+    const latLngPos = [vars.lastData.latitude, vars.lastData.longitude];
+    vars.map.setView(latLngPos, vars.map.getZoom());
+}
+
+function getSimVars() {
+    return [
+        {name: 'PLANE HEADING DEGREES TRUE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.headingTrue},
+        {name: 'PLANE LATITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.latitude},
+        {name: 'PLANE LONGITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.longitude},
+    ];
+}
+</script>
+</body>
+</html>
