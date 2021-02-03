@@ -16,7 +16,10 @@ The GoPilot is just another browser-based VFR map for Microsoft's Flight Simulat
 
 Download the latest version [here](https://github.com/grumpypixel/msfs2020-gopilot/releases)
 
-## How do I build GoPilot myself?
+## Screenshot(s)
+<img src="https://user-images.githubusercontent.com/28186486/106658243-54170e00-659d-11eb-84e6-24e1bf66447e.png" width="20%"></img>
+
+## How do I build GoPilot?
 
 Assuming you have installed Go on your machine and cloned/downloaded the repo, you can build & run GoPilot as follows:
 
@@ -45,6 +48,7 @@ You can run the GoPilot with the following options:
 * Connection Name: --name <YOUR_CONNECTION_NAME> (default: "GoPilot")
 * DLL Search Path: --searchpath <PATH_TO_SIMCONNECT_DLL> (default: ".")
 * Server Address: --address <ADDR:PORT> (default: "0.0.0.0:8888")
+* Request Interval: --requestinterval <INTERVAL_IN_MILLISECONDS> (default: 250)
 * Timeout: --timeout <TIMEOUT_IN_SECONDS> (default: 600)
 
 Example:
@@ -159,15 +163,6 @@ If you've just installed the Go distribution and the system reports it is infect
 
 In any case, if you believe the report is in error, please report a bug to the supplier of your virus scanner. Maybe in time virus scanners can learn to understand Go programs."
 
-## Motivation
-
-There are some really fine VFR maps already available on GitHub. All of them are fabulous and assist well when exploring the virtual flight simulator world. So why build another one?
-
-- I was always missing something when using other VFR maps. Of course, I could've just cloned another project and build "my stuff" on top of that but then I probably wouldn't have learned much, which brings me to:
-- I wanted to delve into Golang more intensively.
-- I had the perfect excuse to start up the simulator and shout "CLEAR PROP!" out of the window because I needed to test and evaluate newly implemented features.
-- And last but not least and most importantly: Fun-coding. "Go will make you love programming again", they said. "We [friggin'] promise", they said. And yes, they were right and kept their promise. Visit [@golang](https://twitter.com/golang)
-
 ## Are there any bugs?
 
 Well. Every program has bugs and I'm pretty sure this one does too. Bugs are annoying and I will fix them as soon as they come up.
@@ -176,9 +171,18 @@ Well. Every program has bugs and I'm pretty sure this one does too. Bugs are ann
 
 Just send me an e-mail and tell me about it.
 
-## This is all bullcrap! I absolutely dislike it!
+## What an outrage! This is all bullcrap! I absolutely dislike it!
 
 Same as above. Just send me an e-mail and let me know why. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from you.
+
+## Motivation
+
+There are some really fine VFR maps already available on GitHub. All of them are fabulous and assist well when exploring the virtual flight simulator world. So why build another one?
+
+- I was always missing something when using other VFR maps. Of course, I could've just cloned another project and build "my stuff" on top of that but then I probably wouldn't have learned much, which brings me to:
+- I wanted to delve into Golang more intensively.
+- I had the perfect excuse to start up the simulator and shout "CLEAR PROP!" out of the window because I needed to test and evaluate newly implemented features.
+- And last but not least and most importantly: Fun-coding. "Go will make you love programming again", they said. "We [friggin'] promise", they said. And yes, they were right and kept their promise. Visit [@golang](https://twitter.com/golang)
 
 ## Shoutouts
 
