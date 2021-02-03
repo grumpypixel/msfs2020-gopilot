@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,11 +21,12 @@ import (
 	// log "github.com/sirupsen/logrus"
 )
 
-type Params struct {
-	connectionName string
-	searchPath     string
-	serverAddress  string
-	timeout        int64
+type Parameters struct {
+	connectionName  string
+	searchPath      string
+	serverAddress   string
+	requestInterval int64
+	timeout         int64
 }
 
 type Message struct {
@@ -35,22 +37,17 @@ type Message struct {
 }
 
 const (
-	appTitle                 = "MSFS2020-GoPilot"
-	contentTypeHTML          = "text/html"
-	contentTypeText          = "text/plain; charset=utf-8"
-	defaultConnectionName    = "GoPilot"
-	defaultServerAddress     = "0.0.0.0:8888"
-	defaultSearchPath        = "."
-	githubRoot               = "http://github.com/grumpypixel/msfs2020-gopilot/"
-	githubReleases           = "http://github.com/grumpypixel/msfs2020-gopilot/releases"
-	defaultConnectionTimeout = 600
-	connectRetrySeconds      = 1
-	requestDataInterval      = time.Millisecond * 250
-	receiveDataInterval      = time.Millisecond * 1
-)
-
-var (
-	params *Params
+	appTitle             = "MSFS2020-GoPilot"
+	contentTypeHTML      = "text/html"
+	contentTypeText      = "text/plain; charset=utf-8"
+	defaultServerAddress = "0.0.0.0:8888"
+	defaultSearchPath    = "."
+	githubRoot           = "http://github.com/grumpypixel/msfs2020-gopilot/"
+	githubReleases       = "http://github.com/grumpypixel/msfs2020-gopilot/releases"
+	connectionTimeout    = 600 // in seconds
+	connectRetryInterval = 1   // in seconds
+	requestDataInterval  = 250 // in milliseconds
+	receiveDataInterval  = 1   // in milliseconds
 )
 
 type App struct {
@@ -70,22 +67,33 @@ func init() {
 
 func main() {
 	fmt.Printf("\nWelcome to %s\nProject page: %s\nReleases: %s\n\n", appTitle, githubRoot, githubReleases)
-	parseParameters()
+	params := &Parameters{}
+	parseParameters(params)
+	dumpParameters(params)
 	locateLibrary(params.searchPath)
 
 	app := NewApp()
 	app.run(params)
 
-	fmt.Println("Bye.")
+	fmt.Println("Bye")
 }
 
-func parseParameters() {
-	params = &Params{}
-	flag.StringVar(&params.connectionName, "name", defaultConnectionName, "SimConnect connection name")
+func parseParameters(params *Parameters) {
+	flag.StringVar(&params.connectionName, "name", connectionName(), "Connection name")
 	flag.StringVar(&params.searchPath, "searchpath", defaultSearchPath, "Additional DLL search path")
-	flag.StringVar(&params.serverAddress, "address", defaultServerAddress, "Server address (<ipaddr>:<port>)")
-	flag.Int64Var(&params.timeout, "timeout", defaultConnectionTimeout, "Timeout in seconds (optional)")
+	flag.StringVar(&params.serverAddress, "address", defaultServerAddress, "Web server address (<ipaddr>:<port>)")
+	flag.Int64Var(&params.requestInterval, "requestinterval", requestDataInterval, "Request data interval in milliseconds")
+	flag.Int64Var(&params.timeout, "timeout", connectionTimeout, "Timeout in seconds")
 	flag.Parse()
+}
+
+func dumpParameters(params *Parameters) {
+	fmt.Println("Application parameters")
+	fmt.Println(" Connection name:", params.connectionName)
+	fmt.Println(" Additional DLL search path:", params.searchPath)
+	fmt.Println(" Web server address:", params.serverAddress)
+	fmt.Printf(" RequestInterval: %ds\n", params.requestInterval)
+	fmt.Printf(" Timeout: %ds\n\n", params.timeout)
 }
 
 func locateLibrary(additionalSearchPath string) {
@@ -99,6 +107,17 @@ func locateLibrary(additionalSearchPath string) {
 	}
 }
 
+func connectionName() string {
+	rand.Seed(time.Now().Unix())
+	names := []string{
+		"0xDECAFBAD", "0xBADDCAFE", "0xCAFED00D",
+		"Boobytrap", "Sobeit Void", "Transpotato",
+		"A but Tuba", "Evil Olive", "Flee to Me, Remote Elf",
+		"Sit on a Potato Pan, Otis", "Taco Cat", "UFO Tofu",
+	}
+	return names[rand.Intn(len(names))]
+}
+
 func NewApp() *App {
 	return &App{
 		requestManager: NewRequestManager(),
@@ -106,7 +125,7 @@ func NewApp() *App {
 	}
 }
 
-func (app *App) run(params *Params) {
+func (app *App) run(params *Parameters) {
 	app.socket = websockets.NewWebSocket()
 	go app.handleSocketMessages()
 
@@ -118,13 +137,17 @@ func (app *App) run(params *Params) {
 		panic(err)
 	}
 	app.mate = simconnect.NewSimMate()
-	if err := app.connect(params.connectionName, params.timeout); err != nil {
+	retryInterval := time.Second * connectRetryInterval
+	timeout := time.Second * time.Duration(params.timeout)
+	if err := app.connect(params.connectionName, retryInterval, timeout); err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	go app.handleTerminationSignal()
-	go app.mate.HandleEvents(requestDataInterval, receiveDataInterval, app)
+	requestInterval := time.Millisecond * time.Duration(params.requestInterval)
+	receiveInterval := time.Millisecond * receiveDataInterval
+	go app.mate.HandleEvents(requestInterval, receiveInterval, app)
 
 	defer close(app.done)
 	<-app.done
@@ -150,20 +173,22 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 		{Pattern: "/simvars", Handler: app.GeneratedContentHandler(textHeaders, "/simvars", app.SimvarsGenerator)},
 		{Pattern: "/ws", Handler: app.socket.Serve},
 	}
+	fmt.Println("Starting web server")
 	assetsDir := "/assets/"
 	webServer.Run(routes, assetsDir)
 
-	fmt.Println("Web Server listening on", address)
+	fmt.Printf("Web Server listening on %s\n\n", address)
 	fmt.Println("Your network interfaces:")
 	webServer.ListNetworkInterfaces()
+	fmt.Println("")
 }
 
-func (app *App) connect(name string, timeoutSeconds int64) error {
-	fmt.Printf("Connecting to the Simulator... interval=%ds, timeout=%ds\n", connectRetrySeconds, timeoutSeconds)
-	connectTicker := time.NewTicker(time.Second * time.Duration(connectRetrySeconds))
+func (app *App) connect(name string, retryInterval, timeout time.Duration) error {
+	fmt.Println("Connecting to the Simulator...")
+	connectTicker := time.NewTicker(retryInterval)
 	defer connectTicker.Stop()
 
-	timeoutTimer := time.NewTimer(time.Second * time.Duration(timeoutSeconds))
+	timeoutTimer := time.NewTimer(timeout)
 	defer timeoutTimer.Stop()
 
 	count := 0
@@ -180,13 +205,13 @@ func (app *App) connect(name string, timeoutSeconds int64) error {
 			}
 
 		case <-timeoutTimer.C:
-			return fmt.Errorf("Could not open a connection to the simulator within %d seconds", timeoutSeconds)
+			return fmt.Errorf("Could not open a connection to the simulator within %d seconds", timeout)
 		}
 	}
 }
 
 func (app *App) disconnect() error {
-	fmt.Println("Closing connection.")
+	fmt.Println("Closing connection")
 	if err := app.mate.Close(); err != nil {
 		return err
 	}
@@ -202,7 +227,7 @@ func (app *App) handleTerminationSignal() {
 	for {
 		select {
 		case <-sigterm:
-			fmt.Println("Received SIGTERM.")
+			fmt.Println("Received SIGTERM")
 			app.done <- true
 			return
 		}
@@ -325,7 +350,7 @@ func (app *App) removeRequests(connID string) {
 }
 
 func (app *App) OnOpen(applName, applVersion, applBuild, simConnectVersion, simConnectBuild string) {
-	fmt.Println("\nConnected.")
+	fmt.Println("\nConnected")
 	app.flightSimVersion = fmt.Sprintf(
 		"Flight Simulator:\n Name: %s\n Version: %s (build %s)\n SimConnect: %s (build %s)",
 		applName, applVersion, applBuild, simConnectVersion, simConnectBuild)
@@ -334,7 +359,7 @@ func (app *App) OnOpen(applName, applVersion, applBuild, simConnectVersion, simC
 }
 
 func (app *App) OnQuit() {
-	fmt.Println("Disconnected.")
+	fmt.Println("Disconnected")
 	app.done <- true
 }
 

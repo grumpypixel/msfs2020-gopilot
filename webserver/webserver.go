@@ -43,7 +43,6 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 		Handler:      router,
 	}
 
-	fmt.Println("Starting web server")
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			log.Println(err)

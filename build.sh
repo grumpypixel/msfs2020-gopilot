@@ -8,4 +8,4 @@ fi
 
 echo "building..."
 CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o $EXEC gopilot/main.go gopilot/request_manager.go
-echo "done."
+echo "done"
