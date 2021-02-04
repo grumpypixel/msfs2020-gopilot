@@ -6,5 +6,7 @@ if [ ! -f "$EXEC" ]; then
   ./build.sh
 fi
 
-echo "starting..."
+#rm SimConnect.dll
+
+echo "Starting..."
 ./$EXEC

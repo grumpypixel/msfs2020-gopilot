@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/filepacker"
 	"app/webserver"
 	"app/websockets"
 	"encoding/json"
@@ -38,6 +39,7 @@ type Message struct {
 
 const (
 	appTitle             = "MSFS2020-GoPilot"
+	assetsDir            = "./assets/"
 	contentTypeHTML      = "text/html"
 	contentTypeText      = "text/plain; charset=utf-8"
 	defaultServerAddress = "0.0.0.0:8888"
@@ -70,7 +72,7 @@ func main() {
 	params := &Parameters{}
 	parseParameters(params)
 	dumpParameters(params)
-	locateLibrary(params.searchPath)
+	verifyInstallation(params.searchPath)
 
 	app := NewApp()
 	app.run(params)
@@ -96,15 +98,54 @@ func dumpParameters(params *Parameters) {
 	fmt.Printf(" Timeout: %ds\n\n", params.timeout)
 }
 
-func locateLibrary(additionalSearchPath string) {
-	if simconnect.LocateLibrary(additionalSearchPath) == false {
-		fullpath := path.Join(additionalSearchPath, simconnect.SimConnectDLL)
-		fmt.Printf("DLL not found in given search paths\nUnpacking library to: %s\n", fullpath)
-		if err := simconnect.UnpackDLL(fullpath); err != nil {
-			fmt.Println("Unable to unpack DLL error:", err)
-			return
+func verifyInstallation(dllSearchPath string) {
+	// Check DLL
+	if simconnect.LocateLibrary(dllSearchPath) == false {
+		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
+		fmt.Println("DLL not found...")
+		data := PackedSimConnectDLL()
+		if err := unpack(data, fullpath); err != nil {
+			fmt.Println("Unable to unpack DLL:", err)
 		}
 	}
+	// Check assets directory
+	if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
+		tarball := "assets.tar"
+		fullpath := path.Join("", tarball)
+		fmt.Println("Assets not found...")
+		data := PackedAssets()
+		if err := unpack(data, fullpath); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if err := filepacker.Untar(tarball, ""); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if err := os.Remove(fullpath); err != nil {
+			fmt.Println(err)
+		}
+	}
+}
+
+func unpack(data []byte, fullpath string) error {
+	fmt.Printf("Unpacking target: %s\n", fullpath)
+	unpacked, err := filepacker.Unpack(data)
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(fullpath)
+	if err != nil {
+		return err
+	}
+	if _, err := file.WriteString(string(unpacked)); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	time.Sleep(time.Second * 1)
+	return nil
 }
 
 func connectionName() string {

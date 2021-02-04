@@ -1,0 +1,9 @@
+// Code generated with {{ .Tool }}
+// Seriously. NO EDIT, NO TOUCH!
+// Timestamp: {{ .Timestamp }}
+
+package {{ .Package }}
+
+func {{ .Func }}() []byte {
+	return []byte("{{ .Data }}")
+}
