@@ -537,7 +537,6 @@ function initMap(latitude, longitude) {
         zoom: constants.mapInitialZoom,
         attributionControl: false,
         zoomControl: false,
-        // fullscreenControl: false,
     });
 
     const attrib = L.control.attribution({position: constants.mapControlPosition});
@@ -604,11 +603,6 @@ function initMap(latitude, longitude) {
             position: constants.mapControlPosition,
         }).addTo(map);
     }
-
-    // const showFullscreenControl = getUrlParamAsBool(vars.urlParams, 'fullscreen_control', true);
-    // if (showFullscreenControl === true) {
-    //     map.addControl(new L.Control.Fullscreen({position: constants.mapControlPosition}));
-    // }
 
     vars.map = map;
 }
