@@ -1,7 +1,7 @@
 # msfs2020-gopilot
 
 ## tl;dr
-The GoPilot is just another browser-based VFR map for Microsoft's Flight Simulator 2020 (MSFS2020).
+The GoPilot is just another browser-based VFR map for [Microsoft Flight Simulator 2020](https://www.flightsimulator.com) (MSFS2020).
 
 ## Features
 
@@ -113,7 +113,7 @@ List of available options:
 * `plane_size=<number>` specifiy the size of the plane (default: 64)
 * `plane_opacity=<decimal>` specify the plane's opacity as a decimal value (default: 1.0)
 * `plane_style=black|gray|green|white` set the plane's color (default: white)
-* `open_in=<google|bing>` open a marked spot in either Google Maps or Bing Maps (default: google)
+* `open_in=<bing|google>` open a marked spot in either Google Maps or Bing Maps (default: bing)
 * `marker_event=click|dblclick|contextmenu` specify the mouse event with which the map marker is placed (default: click)
 * `mapbox_token=<token>` use your own Mapbox token since the one provided is limited
 * `bing_key=<key>` usw your own Bing Maps key since the one provided is also limited
@@ -187,7 +187,7 @@ There are some really fine VFR maps already available on GitHub. All of them are
 
 ## Shoutouts
 
-A big thank you goes out to Microsoft and especially to all the peepz at Asobo for creating such an awesome simulator/program/game/dillydaller.
+A big thank you goes out to Microsoft and especially to all the peepz at [Asobo](https://www.asobostudio.com) for creating such an awesome simulator/program/game/dillydaller.
 
 Big, hearty thank yous go out to [Pilot Emilie](https://www.youtube.com/c/Pilotemilie/about) and [Squirrel](https://www.youtube.com/squirrel/about) for their fun and educational videos.
 And thanks to the whole, supporting Potato Gang.

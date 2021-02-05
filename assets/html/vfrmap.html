@@ -237,7 +237,7 @@ const vars = {
     },
     map: null,
     mapMarker: null,
-    openIn: 'google',
+    openIn: 'bing',
     planeIcons: {},
     planeMarker: null,
     socket: null,
@@ -407,7 +407,7 @@ function initCustomParams() {
     vars.dmsCoords = getUrlParamAsBool(vars.urlParams, 'dms_coords', true);
     vars.showHud = getUrlParamAsBool(vars.urlParams, 'hud', true);
     vars.showUnits = getUrlParamAsBool(vars.urlParams, 'units', true);
-    vars.openIn = getUrlParam(vars.urlParams, 'open_in', 'google');
+    vars.openIn = getUrlParam(vars.urlParams, 'open_in', vars.openIn);
     vars.planeStyle = getUrlParam(vars.urlParams, 'plane_style', null);
 
     const event = getUrlParam(vars.urlParams, 'marker_event', null);
