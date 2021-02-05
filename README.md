@@ -88,7 +88,7 @@ Examples:
 * `http://localhost:8888/mehmap`
 * `http://localhost:8888/setdata`
 
-### VFR Map Options
+## VFR Map Options
 
 The VFR map comes with a bunch of options (*URL Parameters*) which can be specified in the address bar.
 
@@ -99,24 +99,25 @@ Or a combination of multiple options:\
 `http://localhost:8888?<PARAM_NAME_1>=<VALUE_1>&<PARAM_NAME_2>=<VALUE_2>`
 
 List of available options:
-* `dms_coords=true|false` display latitude/longitude coordinates in DMS format (*Degrees Minutes Seconds*) (default: true)
-* `hud=<true|false>` show/hide the HUD (default: true)
-* `layer_control=true|false` show/hide the layer control (default: true)
-* `scale_control=true|false` show/hide the scale control (default: true)
-* `strip_title=true|false` remove "Asobo" from the plane's type name (default: false)
-* `units=<true|false>` show/hide the units in the HUD (default: true)
-* `watermark=true|false` display a watermark in the right bottom corner (default: false)
-* `watermark_size=<value>` specify the watermark's size (default: 128px). *128px*/*128em*/*128* will result in different sizes.
-* `watermark_url=<url>` specify the url of the watermark (default: load a placeholder)
-* `watermark_position=bottomright|bottomleft|topleft|topright` set the watermark's position (default: bottomright)
-* `zoom_control=true|false` show/hide the zoom control (default: true)
-* `plane_size=<number>` specifiy the size of the plane (default: 64)
-* `plane_opacity=<decimal>` specify the plane's opacity as a decimal value (default: 1.0)
-* `plane_style=black|gray|green|white` set the plane's color (default: white)
-* `open_in=<bing|google>` open a marked spot in either Google Maps or Bing Maps (default: bing)
-* `marker_event=click|dblclick|contextmenu` specify the mouse event with which the map marker is placed (default: click)
-* `mapbox_token=<token>` use your own Mapbox token since the one provided is limited
-* `bing_key=<key>` usw your own Bing Maps key since the one provided is also limited
+
+* `dms_coords=true|false` - display latitude/longitude coordinates in DMS format (*Degrees Minutes Seconds*) (default: true)
+* `hud=<true|false>` - show/hide the HUD (default: true)
+* `layer_control=true|false` - show/hide the layer control (default: true)
+* `scale_control=true|false` - show/hide the scale control (default: true)
+* `strip_title=true|false` - remove "Asobo" from the plane's type name (default: false)
+* `units=<true|false>` - show/hide the units in the HUD (default: true)
+* `watermark=true|false` - display a watermark in the right bottom corner (default: false)
+* `watermark_size=<value>` - specify the watermark's size (default: 128px). *128px*/*128em*/*128* will result in different sizes.
+* `watermark_url=<url>` - specify the url of the watermark (default: load a placeholder)
+* `watermark_position=bottomright|bottomleft|topleft|topright` - set the watermark's position (default: bottomright)
+* `zoom_control=true|false` - show/hide the zoom control (default: true)
+* `plane_size=<number>` - specifiy the size of the plane (default: 64)
+* `plane_opacity=<decimal>` - specify the plane's opacity as a decimal value (default: 1.0)
+* `plane_style=black|gray|green|white` - set the plane's color (default: white)
+* `open_in=<bing|google>` - open a marked spot in either Google Maps or Bing Maps (default: bing)
+* `marker_event=click|dblclick|contextmenu` - specify the mouse event with which the map marker is placed (default: click)
+* `mapbox_token=<token>` - use your own token for [Mapbox](https://docs.mapbox.com/help/tutorials/get-started-tokens-api/) since the one provided is limited
+* `bing_key=<key>` - use your own key for [Bing Maps](https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key) since the one provided is also limited
 
 Note: Boolean parameters can be entered as true or false, 1 or 0, yes or no.
 
@@ -124,6 +125,14 @@ Example:
 ```console
 http://localhost:8888?plane_style=green&plane_size=128&plane_opacity=0.73&open_in=bing&dms_coords=0&watermark=1&watermark_url=https://media.giphy.com/media/SgwPtMD47PV04/giphy.gif&marker_event=contextmenu&zoom_control=false
 ```
+
+## VFR Map Keyboard Shortcuts
+
+These are the available keyboard shortcuts on the VFR map:
+
+* C - Center on Plane
+* F - Follow Plane
+* T - Toggle Fullscreen
 
 ## How do I find my IP address?
 
