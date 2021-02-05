@@ -100,15 +100,16 @@ Or a combination of multiple options:\
 
 List of available options:
 * `dms_coords=true|false` display latitude/longitude coordinates in DMS format (*Degrees Minutes Seconds*) (default: true)
-* `hud=<true|false>` hide the HUD if you don't like it (default: true)
-* `layer_control=true|false` hide the layer control if you don't need it (default: true)
+* `hud=<true|false>` show/hide the HUD (default: true)
+* `layer_control=true|false` show/hide the layer control (default: true)
+* `scale_control=true|false` show/hide the scale control (default: true)
 * `strip_title=true|false` remove "Asobo" from the plane's type name (default: false)
-* `units=<true|false>` hide the units in the HUD if you think it's not necessary (default: true)
+* `units=<true|false>` show/hide the units in the HUD (default: true)
 * `watermark=true|false` display a watermark in the right bottom corner (default: false)
 * `watermark_size=<value>` specify the watermark's size (default: 128px). *128px*/*128em*/*128* will result in different sizes.
 * `watermark_url=<url>` specify the url of the watermark (default: load a placeholder)
 * `watermark_position=bottomright|bottomleft|topleft|topright` set the watermark's position (default: bottomright)
-* `zoom_control=true|false` hide the zoom control if you think it's ugh (default: true)
+* `zoom_control=true|false` show/hide the zoom control (default: true)
 * `plane_size=<number>` specifiy the size of the plane (default: 64)
 * `plane_opacity=<decimal>` specify the plane's opacity as a decimal value (default: 1.0)
 * `plane_style=black|gray|green|white` set the plane's color (default: white)

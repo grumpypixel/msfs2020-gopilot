@@ -557,6 +557,13 @@ function initMap(latitude, longitude) {
     attrib.addAttribution('&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>');
     attrib.addTo(map);
 
+    const showScale = getUrlParamAsBool(vars.urlParams, 'scale_control', true);
+    if (showScale === true) {
+        L.control.scale({
+            position: 'bottomright',
+        }).addTo(map);
+    }
+
     const maps = {};
     maps[baseMapNames.openStreetMap] = osm;
     if (mapbox !== null) {
