@@ -240,12 +240,21 @@ const vars = {
     openIn: 'bing',
     planeIcons: {},
     planeMarker: null,
-    socket: null,
     simConnectStatus: false,
+    showAttributions: true,
+    socket: null,
     socketStatus: false,
     markerEvent: null,
     stripTitle: false,
     urlParams: {},
+};
+
+const attributions = {
+    fontawesome: '&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>',
+    mapbox: '&copy; <a href="https://www.mapbox.com/about/maps/" target="_blank">Mapbox</a>',
+    openaip: '&copy; <a href="https://www.openaip.net" target="_blank">openAIP</a>',
+    openStreetMap: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+    stamen: '&copy; <a href="http://maps.stamen.com" target="_blank">Stamen Design</a>',
 };
 
 const baseMapNames = {
@@ -255,6 +264,10 @@ const baseMapNames = {
     osmGrayscale: 'OSM Grayscale',
     stamenTerrain: 'Stamen Terrain',
     stamenToner: 'Stamen Toner',
+};
+
+const overlayMapNames = {
+    openAIP: 'openAIP NavData',
 };
 
 const connectionColors = {
@@ -405,10 +418,11 @@ window.onbeforeunload = () => {
 function initCustomParams() {
     vars.stripTitle = getUrlParamAsBool(vars.urlParams, 'strip_title', false);
     vars.dmsCoords = getUrlParamAsBool(vars.urlParams, 'dms_coords', true);
+    vars.openIn = getUrlParam(vars.urlParams, 'open_in', 'bing');
+    vars.planeStyle = getUrlParam(vars.urlParams, 'plane_style', null);
+    vars.showAttributions = getUrlParamAsBool(vars.urlParams, 'attributions', true);
     vars.showHud = getUrlParamAsBool(vars.urlParams, 'hud', true);
     vars.showUnits = getUrlParamAsBool(vars.urlParams, 'units', true);
-    vars.openIn = getUrlParam(vars.urlParams, 'open_in', vars.openIn);
-    vars.planeStyle = getUrlParam(vars.urlParams, 'plane_style', null);
 
     const event = getUrlParam(vars.urlParams, 'marker_event', null);
     for (eventName of markerEvents) {
@@ -547,15 +561,12 @@ function initMap(latitude, longitude) {
         zoomControl: false,
     });
 
-    const attrib = L.control.attribution({position: constants.mapControlPosition});
-    attrib.addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>');
-    if (mapbox !== null) {
-        attrib.addAttribution('&copy; <a href="https://www.mapbox.com/about/maps/" target="_blank">Mapbox</a>');
+    if (vars.showAttributions === true) {
+        const attrib = L.control.attribution({position: constants.mapControlPosition});
+        attrib.addAttribution(attributions.openStreetMap);
+        attrib.addAttribution(attributions.fontawesome);
+        attrib.addTo(map);
     }
-    attrib.addAttribution('&copy; <a href="http://maps.stamen.com" target="_blank">Stamen Design</a>');
-    attrib.addAttribution('&copy; <a href="https://www.openaip.net" target="_blank">openAIP</a>');
-    attrib.addAttribution('&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>');
-    attrib.addTo(map);
 
     const showScale = getUrlParamAsBool(vars.urlParams, 'scale_control', true);
     if (showScale === true) {
@@ -576,10 +587,6 @@ function initMap(latitude, longitude) {
     if (badaBing !== null) {
         maps[baseMapNames.bing] = badaBing;
     }
-
-    const overlays = {
-        'openAIP NavData': openAIP,
-    };
 
     osm.addTo(map);
 
@@ -607,7 +614,9 @@ function initMap(latitude, longitude) {
 
     const showLayerControl = getUrlParamAsBool(vars.urlParams, 'layer_control', true);
     if (showLayerControl === true) {
-            L.control.layers(maps, overlays, {
+        const overlays = {};
+        overlays[overlayMapNames.openAIP] = openAIP;
+        L.control.layers(maps, overlays, {
             position: constants.mapControlPosition,
         }).addTo(map);
     }
@@ -737,10 +746,8 @@ function handleMapEvents() {
     });
 
     vars.map.on('baselayerchange', (e) => {
-        if (vars.planeStyle !== null) {
-            return;
-        }
-        switch (e.name) {
+        if (vars.planeStyle === null) {
+            switch (e.name) {
             case baseMapNames.stamenTerrain:
                 vars.planeMarker.setIcon(vars.planeIcons.black);
                 break;
@@ -752,6 +759,43 @@ function handleMapEvents() {
                 break;
             default:
                 vars.planeMarker.setIcon(vars.planeIcons.white);
+                break;
+            }
+        }
+        if (vars.showAttributions === true) {
+            const attrib = vars.map.attributionControl;
+            attrib.removeAttribution(attributions.mapbox);
+            attrib.removeAttribution(attributions.openaip);
+            attrib.removeAttribution(attributions.openStreetMap);
+            attrib.removeAttribution(attributions.stamen);
+            switch (e.name) {
+                case baseMapNames.mapbox:
+                    attrib.addAttribution(attributions.mapbox);
+                    break;
+                case baseMapNames.openStreetMap:
+                case baseMapNames.osmGrayscale:
+                    attrib.addAttribution(attributions.openStreetMap);
+                    break;
+                case baseMapNames.stamenTerrain:
+                case baseMapNames.stamenToner:
+                    attrib.addAttribution(attributions.stamen);
+                    break;
+            }
+        }
+    });
+    vars.map.on('overlayadd', (e) => {
+        const attrib = vars.map.attributionControl;
+        switch (e.name) {
+            case overlayMapNames.openAIP:
+                attrib.addAttribution(attributions.openaip);
+                break;
+        }
+    });
+    vars.map.on('overlayremove', (e) => {
+        const attrib = vars.map.attributionControl;
+        switch (e.name) {
+            case overlayMapNames.openAIP:
+                attrib.removeAttribution(attributions.openaip);
                 break;
         }
     });
