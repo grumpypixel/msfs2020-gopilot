@@ -65,12 +65,12 @@
 <body>
 <div id="map"></div>
 <div id="overlay_plane">
-    <div id="center_on_plane"  title="Click to center on plane">
-        <i class="fa fa-plane" style="font-size: 32px;color:white; margin: 4px;" onclick="handleCenterOnPlaneClick(this)"></i>
+    <div id="center_on_plane" title="Click to center on plane ('C')">
+        <i class="fa fa-plane" style="font-size: 32px;color:white; margin: 4px;" onclick="centerOnPlane()"></i>
     </div>
     <div>
-        <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick(this)" />
-        <label></label>Follow</label>
+        <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick()" />
+        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')" >Follow</label>
     </div>
 </div>
 <script>
@@ -106,29 +106,35 @@ const baseMapNames = {
     openStreetMap: 'OpenStreetMap',
 };
 
-const planeIconGetters = {
-    black: getSvgPlaneIconBlackWhite,
-    gray: getSvgPlaneIconGrayBlack,
-    green: getSvgPlaneIconGreenBlack,
-    white: getSvgPlaneIconWhiteBlack,
-};
-
-const elements = {
-    followPlane: null,
-};
-
 const dataTypes = {
     int32: "int32",
     int64: "int64",
     float32: "float32",
     float64: "float64",
     string256: "string256",
-}
+};
+
+const elements = {
+    followPlane: null,
+};
+
+const keyEvents = {
+    'KeyC': centerOnPlane,
+    'KeyF': toggleFollowPlane,
+    'KeyT': toggleFullscreen,
+};
 
 const monikers = {
     headingTrue: 'heading_true',
     latitude: 'latitude',
     longitude: 'longitude',
+};
+
+const planeIconGetters = {
+    black: getSvgPlaneIconBlackWhite,
+    gray: getSvgPlaneIconGrayBlack,
+    green: getSvgPlaneIconGreenBlack,
+    white: getSvgPlaneIconWhiteBlack,
 };
 
 const units = {
@@ -152,6 +158,7 @@ window.onload = () => {
     }
 
     initElements();
+    initEventListeners();
 
     const latLng = getRandomAirport();
     const latitude = latLng[0];
@@ -179,6 +186,14 @@ window.onbeforeunload = () => {
 function initElements() {
     elements.followPlane = document.getElementById('follow_plane');
     updateFollowPlaneElement(vars.followPlane);
+}
+
+function initEventListeners() {
+    document.addEventListener('keyup', event => {
+        if (keyEvents.hasOwnProperty(event.code)) {
+            keyEvents[event.code]();
+        }
+    });
 }
 
 function initMap(latitude, longitude) {
@@ -363,16 +378,26 @@ function updateFollowPlaneElement(checked) {
     elements.followPlane.checked = checked;
 }
 
-function handleFollowPlaneClick(checkbox) {
-    vars.followPlane = checkbox.checked;
+function handleFollowPlaneClick() {
+    vars.followPlane = elements.followPlane.checked;
+    updateFollowPlaneElement(vars.followPlane);
+    updateFollowPlaneMap();
+}
+
+function toggleFollowPlane() {
+    vars.followPlane = !vars.followPlane;
+    updateFollowPlaneElement(vars.followPlane);
+    updateFollowPlaneMap();
+}
+
+function updateFollowPlaneMap() {
     if (vars.followPlane === true) {
         const latLngPos = [vars.lastData.latitude, vars.lastData.longitude];
         vars.map.setView(latLngPos, vars.map.getZoom());
     }
-    updateFollowPlaneElement(vars.followPlane);
 }
 
-function handleCenterOnPlaneClick(button) {
+function centerOnPlane() {
     const latLngPos = [vars.lastData.latitude, vars.lastData.longitude];
     vars.map.setView(latLngPos, vars.map.getZoom());
 }

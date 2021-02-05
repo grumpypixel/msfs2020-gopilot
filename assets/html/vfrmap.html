@@ -172,14 +172,17 @@
 <div id="map"></div>
 <div id="overlay_plane">
     <div id="atc_id"><span></span></div>
-    <div id="center_on_plane" title="Click to center on plane ('Enter' or 'C')">
+    <div id="center_on_plane" title="Click to center on plane ('C')">
         <i class="fa fa-plane" style="font-size: 32px;color:white; margin: 4px;" onclick="centerOnPlane()"></i>
     </div>
     <div>
-        <input type="checkbox" id="follow_plane_checkbox" onclick="handleFollowPlaneClick()" />
-        <label id="follow_plane_label" onclick="handleFollowPlaneToggle()" title="Click to follow plane ('Space' or 'F')" >Follow</label>
+        <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick()" />
+        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')" >Follow</label>
     </div>
-    <div><span id="socket_indicator" title="Socket status" style="color:gray">&#x29BF;</span><span id="simconnect_indicator" title="SimConnect status" style="color:gray;">&#x29BF;</span></div>
+    <div>
+        <span id="socket_indicator" title="Socket status" style="color:gray">&#x29BF;</span>
+        <span id="simconnect_indicator" title="SimConnect status" style="color:gray;">&#x29BF;</span>
+    </div>
 </div>
 <div id="overlay_lat_lng">
     <div id="atc_airline_flight_number"><span></span></div>
@@ -257,7 +260,7 @@ const baseMapNames = {
 const connectionColors = {
     connected: 'white',
     disconnected: 'gray',
-}
+};
 
 const dataTypes = {
     int32: 'int32',
@@ -269,7 +272,7 @@ const dataTypes = {
     string32: 'string32',
     string64: 'string64',
     string256: 'string256',
-}
+};
 
 const elements = {
     airspeedIndicated: null,
@@ -279,8 +282,7 @@ const elements = {
     atcAirlineFlightNumber: null,
     atcID: null,
     flaps: null,
-    followPlaneCheckbox: null,
-    followPlaneLabel: null,
+    followPlane: null,
     groundSpeed: null,
     headingMagnetic: null,
     headingTrue: null,
@@ -297,6 +299,12 @@ const elements = {
     trimRudder: null,
     windDirection: null,
     windSpeed: null,
+};
+
+const keyEvents = {
+    'KeyC': centerOnPlane,
+    'KeyF': toggleFollowPlane,
+    'KeyT': toggleFullscreen,
 };
 
 const markerEvents = [
@@ -361,6 +369,8 @@ window.onload = () => {
     }
 
     initElements();
+    initEventListeners();
+
     vars.hudOpacity = elements.hud.style.opacity;
     if (vars.showHud === false) {
         elements.toggleHud.style.display = 'none';
@@ -380,15 +390,7 @@ window.onload = () => {
     vars.lastData.latitude = latitude;
     vars.lastData.longitude = longitude;
 
-    document.addEventListener('keyup', event => {
-        if (event.code === 'Space' || event.code === 'KeyF') {
-            vars.followPlane = !vars.followPlane;
-            updateFollowPlaneElement(vars.followPlane);
-        }
-        if (event.code === 'Enter' || event.code === 'KeyC') {
-            centerOnPlane();
-        }
-    });
+    updateLatLngPositionElement(latitude, longitude);
 }
 
 window.onbeforeunload = () => {
@@ -447,12 +449,18 @@ function initElements() {
     elements.toggleHud = document.getElementById('toggle_hud');
     elements.toggleHudIcon = document.getElementById('toggle_hud_icon');
 
-    elements.followPlaneCheckbox = document.getElementById('follow_plane_checkbox');
-    elements.followPlaneLabel = document.getElementById('follow_plane_label');
+    elements.followPlane = document.getElementById('follow_plane');
     updateFollowPlaneElement(vars.followPlane);
 
     elements.latLngPosition = document.getElementById('lat_lng_position');
-    updateLatLngPositionElement(vars.lastData.latitude, vars.lastData.longitude);
+}
+
+function initEventListeners() {
+    document.addEventListener('keyup', event => {
+        if (keyEvents.hasOwnProperty(event.code)) {
+            keyEvents[event.code]();
+        }
+    });
 }
 
 function initMap(latitude, longitude) {
@@ -462,7 +470,7 @@ function initMap(latitude, longitude) {
     const tileSize = constants.mapTileSize;
     const zoomOffset = constants.mapZoomOffset;
 
-    const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const osm = new L.TileLayer('http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
         format: format,
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -934,7 +942,7 @@ function updateTrimElements(elevator, rudder) {
 }
 
 function updateFollowPlaneElement(checked) {
-    elements.followPlaneCheckbox.checked = checked;
+    elements.followPlane.checked = checked;
 }
 
 function updateLatLngPositionElement(latitude, longitude) {
@@ -965,12 +973,12 @@ function updateAtcInfo(atcAirline, atcFlightNumber, atcID) {
 }
 
 function handleFollowPlaneClick() {
-    vars.followPlane = elements.followPlaneCheckbox.checked;
+    vars.followPlane = elements.followPlane.checked;
     updateFollowPlaneElement(vars.followPlane);
     updateFollowPlaneMap();
 }
 
-function handleFollowPlaneToggle() {
+function toggleFollowPlane() {
     vars.followPlane = !vars.followPlane;
     updateFollowPlaneElement(vars.followPlane);
     updateFollowPlaneMap();

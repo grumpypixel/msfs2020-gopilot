@@ -47,6 +47,19 @@ function calcDistance(from, to) {
     return c * earthRadius;
 }
 
+// https://gist.github.com/demonixis/5188326
+function toggleFullscreen(event) {
+    let element = document.body;
+    if (event instanceof HTMLElement) {
+        element = event;
+    }
+
+    const isFullscreen = document.webkitIsFullScreen || document.mozFullScreen || false;
+    element.requestFullScreen = element.requestFullScreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || function () { return false; };
+    document.cancelFullScreen = document.cancelFullScreen || document.webkitCancelFullScreen || document.mozCancelFullScreen || function () { return false; };
+    isFullscreen ? document.cancelFullScreen() : element.requestFullScreen();
+}
+
 function getMapboxToken() {
     return 'pk.eyJ1IjoiZ3J1bXB5cGl4ZWwiLCJhIjoiY2trbWc5bWs4MmZhdTJ2bjdwbzYydmdyZCJ9.VRa2o7y--UXbK935iz7vvQ';
 }
@@ -128,7 +141,7 @@ function getRandomAirport() {
         [30.108950, 31.400336], // HECA
         [0.044560, 32.441913], // HUEN
         [39.222338, -106.866782], // KASE
-        // [33.637537, -84.439794], // KATL
+        // [33.637537, -84.439794], // KATL // This caused OSM to throw an exception...
         [39.857892, -104.672833], // KDEN
         [32.895095, -97.042235], // KDFW
         [59.349844, -151.927584], // KEB
