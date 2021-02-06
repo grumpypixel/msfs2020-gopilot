@@ -20,7 +20,10 @@ Download the latest version [here](https://github.com/grumpypixel/msfs2020-gopil
 Unzip the archive, run gopilot.exe and browse to http://localhost:8888 (or: http://whatever-your-ip-address-may-be:8888).
 
 ## Screenshot(s)
-<img src="https://user-images.githubusercontent.com/28186486/106658243-54170e00-659d-11eb-84e6-24e1bf66447e.png" width="20%"></img>
+<img src="https://user-images.githubusercontent.com/28186486/107130271-09163700-68cc-11eb-8273-60000598fd9d.png" width="20%"></img>
+<img src="https://user-images.githubusercontent.com/28186486/107130274-0b789100-68cc-11eb-80ed-815dccc20fff.png" width="20%"></img>
+<img src="https://user-images.githubusercontent.com/28186486/107130276-0fa4ae80-68cc-11eb-8a6e-4b9d2638fe5e.png" width="20%"></img>
+<img src="https://user-images.githubusercontent.com/28186486/107130277-129f9f00-68cc-11eb-9120-14a9ecce852d.png" width="20%"></img>
 
 ## How do I build GoPilot myself?
 
