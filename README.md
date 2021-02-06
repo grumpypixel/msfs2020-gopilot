@@ -100,17 +100,20 @@ Or a combination of multiple options:\
 
 List of available options:
 
-* `dms_coords=true|false` - display latitude/longitude coordinates in DMS format (*Degrees Minutes Seconds*) (default: true)
-* `hud=<true|false>` - show/hide the HUD (default: true)
 * `layer_control=true|false` - show/hide the layer control (default: true)
 * `scale_control=true|false` - show/hide the scale control (default: true)
+* `zoom_control=true|false` - show/hide the zoom control (default: true)
+* `dms_coords=true|false` - display latitude/longitude coordinates in DMS format (*Degrees Minutes Seconds*) (default: true)
+* `hud=<true|false>` - show/hide the HUD (default: true)
 * `strip_title=true|false` - remove "Asobo" from the plane's type name (default: false)
 * `units=<true|false>` - show/hide the units in the HUD (default: true)
 * `watermark=true|false` - display a watermark in the right bottom corner (default: false)
 * `watermark_size=<value>` - specify the watermark's size (default: 128px). *128px*/*128em*/*128* will result in different sizes.
 * `watermark_url=<url>` - specify the url of the watermark (default: load a placeholder)
 * `watermark_position=bottomright|bottomleft|topleft|topright` - set the watermark's position (default: bottomright)
-* `zoom_control=true|false` - show/hide the zoom control (default: true)
+* `attributions=true|false` - show/hide the attributions (default: true)
+* `position_overlay=true|false` - show/hide the latitude-longitude position overlay (default: true)
+* `plane_overlay=true|false` - show/hide the follow-plane/center-on-plane overlay (default: true)
 * `plane_size=<number>` - specifiy the size of the plane (default: 64)
 * `plane_opacity=<decimal>` - specify the plane's opacity as a decimal value (default: 1.0)
 * `plane_style=black|gray|green|white` - set the plane's color (default: white)
@@ -121,9 +124,14 @@ List of available options:
 
 Note: Boolean parameters can be entered as true or false, 1 or 0, yes or no.
 
-Example:
+Random example:
 ```console
-http://localhost:8888?plane_style=green&plane_size=128&plane_opacity=0.73&open_in=bing&dms_coords=0&watermark=1&watermark_url=https://media.giphy.com/media/SgwPtMD47PV04/giphy.gif&marker_event=contextmenu&zoom_control=false
+http://localhost:8888/?plane_style=green&plane_size=128&plane_opacity=0.73&open_in=bing&dms_coords=0&watermark=1&watermark_url=https://media.giphy.com/media/SgwPtMD47PV04/giphy.gif&watermark_size=256px&marker_event=contextmenu&layer_control=0&scale_control=0&zoom_control=false&attributions=0
+```
+
+Or go ZEN and switch off all overlays:
+```console
+http://localhost:8888/?hud=0&plane_overlay=0&position_overlay=0&scale_control=0&layer_control=0&zoom_control=0&attributions=0
 ```
 
 ## VFR Map Keyboard Shortcuts
@@ -187,7 +195,7 @@ Same as above. Just send me an e-mail and let me know why. Or, alternatively, cl
 
 ## Motivation
 
-There are some really fine VFR maps already available on GitHub. All of them are fabulous and assist well when exploring the virtual flight simulator world. So why build another one?
+There are some really fine VFR maps already available on GitHub like [this](https://github.com/lian/msfs2020-go) and [this](https://github.com/hankhank10/MSFS2020-cockpit-companion). All of them are fabulous and assist well when exploring the virtual flight simulator world. So why build another one?
 
 - I was always missing something when using other VFR maps. Of course, I could've just cloned another project and build "my stuff" on top of that but then I probably wouldn't have learned much, which brings me to:
 - I wanted to delve into Golang more intensively.

@@ -177,7 +177,7 @@
     </div>
     <div>
         <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick()" />
-        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')" >Follow</label>
+        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')">Follow</label>
     </div>
     <div>
         <span id="socket_indicator" title="Socket status" style="color:gray">&#x29BF;</span>
@@ -206,7 +206,7 @@ const constants = {
     mapFormat: 'image/png',
     mapInitialZoom: 13,
     mapMarkerOpacity: 0.75,
-    mapMaxZoom: 18,
+    mapMaxZoom: 19,
     mapMaxZoomBing: 13,
     mapMinZoom: 1,
     mapTileSize: 256,
@@ -250,9 +250,15 @@ const vars = {
 };
 
 const attributions = {
+    cartoDB: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    esriWorldGrayCanvas: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+    esriWorldImagery: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    esriWorldStreetMap: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
+    esriWorldTopoMap: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
     fontawesome: '&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>',
     mapbox: '&copy; <a href="https://www.mapbox.com/about/maps/" target="_blank">Mapbox</a>',
-    openaip: '&copy; <a href="https://www.openaip.net" target="_blank">openAIP</a>',
+    openAIP: '&copy; <a href="https://www.openaip.net/">openAIP Data</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
+    openRailwayMap: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Map style: &copy; <a href="https://www.OpenRailwayMap.org">OpenRailwayMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
     openStreetMap: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     openStreetMapFR: '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     openStreetMapHOT: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
@@ -262,20 +268,30 @@ const attributions = {
 
 const baseMapNames = {
     bing: 'Bing Maps',
+    cartoDBDarkMatter: 'CartoDB.DarkMatter',
+    cartoDBPositron: 'CartoDB.Positron',
+    cartoDBVoyager: 'CartoDB.Voyager',
+    esriWorldGrayCanvas: 'Esri.WorldGrayCanvas',
+    esriWorldImagery: 'Esri.WorldImagery',
+    esriWorldStreetMap: 'Esri.WorldStreetMap',
+    esriWorldTopoMap: 'Esri.WorldTopoMap',
     mapbox: 'Mapbox',
-    openStreetMapnik: 'OpenStreetMap',
     openStreetMapDE: 'OpenStreetMap.DE',
     openStreetMapFR: 'OpenStreetMap.FR',
     openStreetMapHOT: 'OpenStreetMap.HOT',
+    openStreetMapnik: 'OpenStreetMap',
     openTopoMap: 'OpenTopoMap',
     osmGrayscale: 'OSM Grayscale',
-    stamenTerrain: 'Stamen Terrain',
-    stamenToner: 'Stamen Toner',
-    stamenTonerLight: 'Stamen Toner Light',
+    stamenTerrain: 'Stamen.Terrain',
+    stamenToner: 'Stamen.Toner',
+    stamenTonerLight: 'Stamen.TonerLight',
 };
 
 const overlayMapNames = {
     openAIP: 'openAIP NavData',
+    openRailwayMap: 'OpenRailwayMap',
+    stamenTonerHybrid: 'Stamen.TonerHybrid',
+    stamenTonerLines: 'Stamen.TonerLines',
 };
 
 const connectionColors = {
@@ -309,8 +325,10 @@ const elements = {
     headingTrue: null,
     hud: null,
     hudWeather: null,
+    latLngOverlay: null,
     latLngPosition: null,
     outsideAirTemperature: null,
+    planeOverlay: null,
     simConnectIndicator: null,
     socketIndicator: null,
     title: null,
@@ -397,6 +415,15 @@ window.onload = () => {
         hideHud();
     }
 
+    const showLatLngOverlay = getUrlParamAsBool(vars.urlParams, 'position_overlay', true);
+    if (showLatLngOverlay === false) {
+        elements.latLngOverlay.style.display = 'none';
+    }
+    const showPlaneOverlay = getUrlParamAsBool(vars.urlParams, 'plane_overlay', true);
+    if (showPlaneOverlay === false) {
+        elements.planeOverlay.style.display = 'none';
+    }
+
     const latLng = getRandomAirport();
     const latitude = latLng[0];
     const longitude = latLng[1];
@@ -473,6 +500,9 @@ function initElements() {
     elements.followPlane = document.getElementById('follow_plane');
     updateFollowPlaneElement(vars.followPlane);
 
+    elements.latLngOverlay = document.getElementById('overlay_lat_lng');
+    elements.planeOverlay = document.getElementById('overlay_plane');
+
     elements.latLngPosition = document.getElementById('lat_lng_position');
 }
 
@@ -491,6 +521,7 @@ function initMap(latitude, longitude) {
     const tileSize = constants.mapTileSize;
     const zoomOffset = constants.mapZoomOffset;
 
+    // https://leaflet-extras.github.io/leaflet-providers/preview/
     const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: attributions.openStreetMap,
         format: format,
@@ -539,17 +570,55 @@ function initMap(latitude, longitude) {
         zoomOffset: zoomOffset,
         tileSize: tileSize,
     });
+    const esriWorldStreetMap = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    	attribution: attributions.esriWorldStreetMap,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+    });
+    const esriWorldTopoMap = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    	attribution: attributions.esriWorldTopoMap,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+    });
+    const esriWorldImagery = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    	attribution: attributions.esriWorldImagery,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+    });
+    const esriWorldGrayCanvas = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: attributions.esriWorldGrayCanvas,
+        minZoom: minZoom,
+        maxZoom: 16,
+    });
+    const cartoDBPositron = new L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: attributions.cartoDB,
+        subdomains: 'abcd',
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+    });
+    const cartoDBDarkMatter = new L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: attributions.cartoDB,
+        subdomains: 'abcd',
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+    });
+    const cartoDBVoyager = new L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: attributions.cartoDB,
+        subdomains: 'abcd',
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+    });
     const stamenTerrain = new L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.{ext}', {
         attribution: attributions.stamen,
         format: format,
         subdomains: 'abcd',
         minZoom: minZoom,
-        maxZoom: maxZoom,
+        maxZoom: 14,
         zoomOffset: zoomOffset,
         tileSize: tileSize,
-        ext: 'png'
+        ext: 'png',
     });
-    const stamenToner = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.{ext}', {
+    const stamenToner = new L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.{ext}', {
         attribution: attributions.stamen,
         format: format,
         subdomains: 'abcd',
@@ -559,7 +628,7 @@ function initMap(latitude, longitude) {
         tileSize: tileSize,
         ext: 'png'
     });
-    const stamenTonerLight = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.{ext}', {
+    const stamenTonerLight = new L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.{ext}', {
         attribution: attributions.stamen,
         format: format,
         subdomains: 'abcd',
@@ -569,24 +638,13 @@ function initMap(latitude, longitude) {
         tileSize: tileSize,
         ext: 'png',
     });
-    const openAIP = new L.TileLayer('http://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_basemap@EPSG%3A900913@png/{z}/{x}/{-y}.png', {
-        attribution: attributions.openAIP,
-        format: format,
-        minZoom: minZoom,
-        maxZoom: maxZoom,
-        zoomOffset: zoomOffset,
-        tileSize: tileSize,
-        subdomains: '12',
-        tms: true,
-        transparent: true,
-    });
 
     // Get your own Mapbox token here: https://account.mapbox.com/
     // Example: http://localhost:8080/?mapbox_token=<YOUR_MAPBOX_TOKEN_HERE>
     let mapbox = null;
     const mapboxToken = getUrlParam(vars.urlParams, 'mapbox_token', roxy(getMapboxToken()));
     if (mapboxToken !== null) {
-        mapbox = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxToken, {
+        mapbox = new L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxToken, {
             attribution: attributions.mapbox,
             id: 'mapbox/streets-v11',
             format: format,
@@ -603,14 +661,47 @@ function initMap(latitude, longitude) {
     let badaBing = null;
     const bingKey = getUrlParam(vars.urlParams, 'bing_key', roxy(getBingMapsKey()));
     if (bingKey !== null) {
-        badaBing = L.tileLayer.bing(        {
+        badaBing = new L.tileLayer.bing(        {
             bingMapsKey: bingKey,
             imagerySet: 'Aerial',
             culture: 'en-US',
             minZoom: minZoom,
+            maxZoom: maxZoom,
             minNativeZoom: minZoom,
         });
     }
+
+    // Overlays
+    const stamenTonerHybrid = new L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}{r}.{ext}', {
+        attribution: attributions.stamen,
+        subdomains: 'abcd',
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        ext: 'png'
+    });
+    const stamenTonerLines = new L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lines/{z}/{x}/{y}{r}.{ext}', {
+        attribution: attributions.stamen,
+        subdomains: 'abcd',
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        ext: 'png',
+    });
+    const openRailwayMap = new L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+        attribution: attributions.openRailwayMap,
+        minZoom: minZoom,
+	    maxZoom: maxZoom,
+    });
+    const openAIP = new L.TileLayer('http://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_basemap@EPSG%3A900913@png/{z}/{x}/{-y}.png', {
+        attribution: attributions.openAIP,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+        subdomains: '12',
+        tms: true,
+        transparent: true,
+    });
 
     const map = new L.Map('map', {
         layers: osm,
@@ -640,9 +731,16 @@ function initMap(latitude, longitude) {
     maps[baseMapNames.openStreetMapHOT] = osmHOT;
     maps[baseMapNames.osmGrayscale] = osmGrayscale;
     maps[baseMapNames.openTopoMap] = openTopoMap;
+    maps[baseMapNames.esriWorldStreetMap] = esriWorldStreetMap;
+    maps[baseMapNames.esriWorldTopoMap] = esriWorldTopoMap;
+    maps[baseMapNames.esriWorldImagery] = esriWorldImagery;
+    maps[baseMapNames.esriWorldGrayCanvas] = esriWorldGrayCanvas;
     maps[baseMapNames.stamenTerrain] = stamenTerrain;
     maps[baseMapNames.stamenToner] = stamenToner;
     maps[baseMapNames.stamenTonerLight] = stamenTonerLight;
+    maps[baseMapNames.cartoDBPositron] = cartoDBPositron;
+    maps[baseMapNames.cartoDBDarkMatter] = cartoDBDarkMatter;
+    maps[baseMapNames.cartoDBVoyager] = cartoDBVoyager;
     if (mapbox !== null) {
         maps[baseMapNames.mapbox] = mapbox;
     }
@@ -677,6 +775,9 @@ function initMap(latitude, longitude) {
     const showLayerControl = getUrlParamAsBool(vars.urlParams, 'layer_control', true);
     if (showLayerControl === true) {
         const overlays = {};
+        overlays[overlayMapNames.stamenTonerLines] = stamenTonerLines;
+        overlays[overlayMapNames.stamenTonerHybrid] = stamenTonerHybrid;
+        overlays[overlayMapNames.openRailwayMap] = openRailwayMap;
         overlays[overlayMapNames.openAIP] = openAIP;
         L.control.layers(maps, overlays, {
             position: constants.mapControlPosition,
@@ -813,12 +914,19 @@ function handleMapEvents() {
             case baseMapNames.openTopoMap:
             case baseMapNames.osmGrayscale:
             case baseMapNames.stamenTerrain:
+            case baseMapNames.cartoDBPositron:
+            case baseMapNames.esriWorldTopoMap:
+            case baseMapNames.esriWorldGrayCanvas:
                 vars.planeMarker.setIcon(vars.planeIcons.black);
                 break;
             case baseMapNames.stamenToner:
             case baseMapNames.stamenTonerLight:
+            case baseMapNames.cartoDBDarkMatter:
                 vars.planeMarker.setIcon(vars.planeIcons.green);
                 break;
+            // case baseMapNames.xoxox:
+            //     vars.planeMarker.setIcon(vars.planeIcons.gray);
+            //     break;
             default:
                 vars.planeMarker.setIcon(vars.planeIcons.white);
                 break;
@@ -1152,7 +1260,6 @@ function getMapsUrl(latitude, longitude, zoom) {
 function copyLatLngPositionToClipboard() {
     copyToClipboard(elements.latLngPosition.textContent);
 }
-
 </script>
 </body>
 </html>
