@@ -246,7 +246,7 @@ func (app *App) connect(name string, retryInterval, timeout time.Duration) error
 			}
 
 		case <-timeoutTimer.C:
-			return fmt.Errorf("Could not open a connection to the simulator within %d seconds", timeout)
+			return fmt.Errorf("Opening a connection to the simulator timed out")
 		}
 	}
 }
