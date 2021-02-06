@@ -50,14 +50,13 @@
         position: absolute;
         bottom: 0;
         left: 50%;
-        /* min-width: 320px; */
         transform: translate(-50%, 0%);
         margin: 4px;
         padding: 4px 8px 4px 8px;
         border-radius: 8px;
         background-color: black;
         color: white;
-        font-size: 1.0em;
+        font-size: 1.1em;
         background-color: rgba(0,0,0,0.75);
         text-align: center;
         z-index: 2;
@@ -65,14 +64,14 @@
     #overlay_plane {
         position: absolute;
         bottom: 0;
-        left: 10;
+        left: 0;
         min-width: 80px;
         margin: 4px;
         padding: 4px 8px 4px 8px;
         border-radius: 8px;
         color: white;
         text-align: center;
-        font-size: 1.0em;
+        font-size: 1.1em;
         background-color: rgba(0,0,0,0.75);
         z-index: 3;
     }
@@ -86,7 +85,7 @@
     </div>
     <div>
         <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick()" />
-        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')" >Follow</label>
+        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')">Follow</label>
     </div>
 </div>
 <div id="overlay_options">
@@ -352,7 +351,7 @@ function createMapMarker(latitude, longitude) {
             + '<i class="fa fa-map-marker" style="font-size: 16px;color:black">&nbsp;</i>'
             + '<span>' + coordinates + '</span><br><br>'
             + 'CAUTION!<br>USE AT YOUR OWN RISK.<br>'
-            + 'TELEPORTING MIGHT WRECK YOUR PLANE.<br>'
+            + 'TELEPORTATION MIGHT WRECK YOUR PLANE.<br>'
             + '<a href="javascript:void(0)" onclick="onTeleport(' + latitude + ', ' + longitude + ');">Teleport</a><br>'
             + '<br><a href="javascript:void(0)" onclick="removeMapMarker();">[Remove]</a><br>'
             + '</div>';

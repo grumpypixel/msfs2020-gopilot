@@ -67,7 +67,6 @@
         border-radius: 8px;
         color: white;
         text-align: center;
-        font-size: 1.0em;
         background-color: rgba(0,0,0,0.75);
         z-index: 3;
     }
@@ -97,7 +96,7 @@
         border-radius: 8px;
         background-color: black;
         color: white;
-        font-size: 1.0em;
+        font-size: 1.1em;
         background-color: rgba(0,0,0,0.75);
         text-align: center;
         z-index: 5;
@@ -112,7 +111,7 @@
         border-radius: 8px;
         color: white;
         text-align: center;
-        font-size: 1.0em;
+        font-size: 1.1em;
         background-color: rgba(0,0,0,0.75);
         z-index: 4;
     }
@@ -127,11 +126,11 @@
     }
     .field_name {
         color: LightSlateGray;
-        font-size: 1.0em;
+        font-size: 1.1em;
     }
     .field_value {
         color: white;
-        font-size: 1.25em;
+        font-size: 1.3em;
     }
     .field_blank {
         color: white;
@@ -167,7 +166,7 @@
     <span class="field_value" id="trim_rudder" title="Rudder Trim">&nbsp;</span>
 </div>
 <div id="toggle_hud" onclick="toggleHud()">
-    <img id="toggle_hud_icon" src="/assets/svg/chevron-circle-up-solid.svg" height="16px" />
+    <img id="toggle_hud_icon" src="/assets/svg/chevron-circle-up-solid.svg" height="20px" />
 </div>
 <div id="map"></div>
 <div id="overlay_plane">
@@ -179,14 +178,14 @@
         <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick()" />
         <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')">Follow</label>
     </div>
-    <div>
+    <div style="padding-top: 8px;">
         <span id="socket_indicator" title="Socket status" style="color:gray">&#x29BF;</span>
         <span id="simconnect_indicator" title="SimConnect status" style="color:gray;">&#x29BF;</span>
     </div>
 </div>
 <div id="overlay_lat_lng">
-    <div id="atc_airline_flight_number"><span></span></div>
-    <div id="title"></div>
+    <div><span id="atc_airline_flight_number"></span></div>
+    <div><span id="title"></span></div>
     <div id="map_position">
         <img id="map_marker_lat_lng" src="/assets/svg/map-marker-alt-solid.svg" height="12px" title="Toggle format" onclick="toggleCoordsFormat()" />
         <span id="lat_lng_position" title="Click to copy to clipboard" onclick="copyLatLngPositionToClipboard()">0&deg; 0&deg;</span>
@@ -195,10 +194,10 @@
 </div>
 <div id="hud_weather">
     <div><span class="field_name">OAT</span></div>
-    <div id="outside_air_temp"><span class="field_value">&nbsp;</span></div>
+    <div><span id="outside_air_temp" class="field_value">&nbsp;</span></div>
     <div><span class="field_name">WIND</span></div>
-    <div id="wind_direction"><span class="field_value">&nbsp;</span></div>
-    <div id="wind_speed"><span class="field_value">&nbsp;</span></div>
+    <div><span id="wind_direction" class="field_value">&nbsp;</span></div>
+    <div><span id="wind_speed" class="field_value">&nbsp;</span></div>
 </div>
 <script>
 const constants = {
@@ -223,7 +222,6 @@ const vars = {
     showHud: true,
     showUnits: true,
     hudVisible: true,
-    hudOpacity: 1.0,
     lastData: {
         airspeed_indiated: 0,
         airspeed_true: 0,
@@ -367,7 +365,6 @@ const monikers = {
     latitude: 'latitude',
     longitude: 'longitude',
     outsideAirTemperature: 'outside_air_temperature',
-    // simOnGround: 'sim_on_ground',
     title: 'title',
     trimElevator: 'trim_elevator',
     trimRudder: 'trim_rudder',
@@ -409,16 +406,18 @@ window.onload = () => {
     initElements();
     initEventListeners();
 
-    vars.hudOpacity = elements.hud.style.opacity;
     if (vars.showHud === false) {
+        elements.hud.style.display = 'none';
+        elements.hudWeather.style.display = 'none';
         elements.toggleHud.style.display = 'none';
-        hideHud();
+        vars.hudVisible = false;
     }
 
     const showLatLngOverlay = getUrlParamAsBool(vars.urlParams, 'position_overlay', true);
     if (showLatLngOverlay === false) {
         elements.latLngOverlay.style.display = 'none';
     }
+
     const showPlaneOverlay = getUrlParamAsBool(vars.urlParams, 'plane_overlay', true);
     if (showPlaneOverlay === false) {
         elements.planeOverlay.style.display = 'none';
@@ -521,6 +520,7 @@ function initMap(latitude, longitude) {
     const tileSize = constants.mapTileSize;
     const zoomOffset = constants.mapZoomOffset;
 
+    // https://wiki.openstreetmap.org/wiki/Tiles#Servers
     // https://leaflet-extras.github.io/leaflet-providers/preview/
     const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: attributions.openStreetMap,
@@ -1095,7 +1095,7 @@ function updateSpeedElements(airspeedIndicated, airspeedTrue, groundSpeed) {
 
 function updateAltitudeElements(altitudeIndicated, altitudeAboveGround) {
     const unit = vars.showUnits === true ? ' ft' : '';
-    elements.altitudeIndicated.innerHTML = '' + Math.round(altitudeIndicated) + unit;
+    elements.altitudeIndicated.innerHTML = Math.round(altitudeIndicated) + unit;
     elements.altitudeAboveGround.innerHTML = 'AGL ' + Math.round(altitudeAboveGround) + unit;
 }
 
@@ -1107,11 +1107,11 @@ function updateHeadingElement(headingMagnetic, headingTrue) {
 
 function updateVerticalSpeedElement(verticalSpeed) {
     const unit = vars.showUnits === true ? ' ft/min' : '';
-    elements.verticalSpeed.innerHTML = '' + Math.round(verticalSpeed) + unit;
+    elements.verticalSpeed.innerHTML = Math.round(verticalSpeed) + unit;
 }
 
 function updateFlapsElement(flaps) {
-    elements.flaps.innerHTML = '' + Math.round(flaps) + '&deg;';
+    elements.flaps.innerHTML = Math.round(flaps) + '&deg;';
 }
 
 function updateTitle(title) {
@@ -1122,8 +1122,8 @@ function updateTitle(title) {
 }
 
 function updateTrimElements(elevator, rudder) {
-    elements.trimElevator.innerHTML = '' + elevator.toFixed(1) + '&percnt;';
-    elements.trimRudder.innerHTML = '' + rudder.toFixed(1) + '&deg;';
+    elements.trimElevator.innerHTML = elevator.toFixed(1) + '&percnt;';
+    elements.trimRudder.innerHTML = rudder.toFixed(1) + '&deg;';
 }
 
 function updateFollowPlaneElement(checked) {
@@ -1135,7 +1135,7 @@ function updateLatLngPositionElement(latitude, longitude) {
     if (vars.dmsCoords === true) {
         str = convertLatLngToDMS(latitude, longitude, '&nbsp;');
     } else {
-        str = '' + latitude + '&deg;&nbsp;' + longitude + '&deg;'
+        str = latitude + '&deg;&nbsp;' + longitude + '&deg;'
     }
     elements.latLngPosition.innerHTML = str;
 }
@@ -1146,10 +1146,10 @@ function updateConnectionIndicators() {
 }
 
 function updateWeatherHud(outsideAirTemperature, windDirection, windSpeed) {
-    elements.outsideAirTemperature.innerHTML = '' + Math.round(outsideAirTemperature) + ' &deg;C'
-    elements.windDirection.innerHTML = '' + Math.round(windDirection) + '&deg;'
+    elements.outsideAirTemperature.innerHTML = Math.round(outsideAirTemperature) + ' &deg;C'
+    elements.windDirection.innerHTML = Math.round(windDirection) + '&deg;'
     const unit = vars.showUnits === true ? ' kt' : '';
-    elements.windSpeed.innerHTML = '' + Math.round(windSpeed) + unit;
+    elements.windSpeed.innerHTML = Math.round(windSpeed) + unit;
 }
 
 function updateAtcInfo(atcAirline, atcFlightNumber, atcID) {
@@ -1184,23 +1184,14 @@ function centerOnPlane() {
 function toggleHud() {
     if (vars.hudVisible === true) {
         elements.toggleHudIcon.src = '/assets/svg/chevron-circle-down-solid.svg';
-        hideHud();
+        elements.hud.style.visibility = 'hidden';
+        elements.hudWeather.style.visibility = 'hidden';
     } else {
         elements.toggleHudIcon.src = '/assets/svg/chevron-circle-up-solid.svg';
-        showHud();
+        elements.hud.style.visibility = 'visible';
+        elements.hudWeather.style.visibility = 'visible';
     }
-}
-
-function showHud() {
-    elements.hud.style.opacity = vars.hudOpacity;
-    elements.hudWeather.style.opacity = vars.hudOpacity;
-    vars.hudVisible = true;
-}
-
-function hideHud() {
-    elements.hud.style.opacity = 0;
-    elements.hudWeather.style.opacity = 0;
-    vars.hudVisible = false;
+    vars.hudVisible = !vars.hudVisible;
 }
 
 function toggleCoordsFormat() {
