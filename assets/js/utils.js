@@ -61,11 +61,11 @@ function toggleFullscreen(event) {
 }
 
 function getMapboxToken() {
-    return 'pk.eyJ1IjoiZ3J1bXB5cGl4ZWwiLCJhIjoiY2trbWc5bWs4MmZhdTJ2bjdwbzYydmdyZCJ9.VRa2o7y--UXbK935iz7vvQ';
+    return 'qj/dxK0Hknh[2K0cYC4bFm5[VvhMBKiHknhX3uscVb4cVr5Ll[ieUK3ckevc{Xxelex[BK8/WS`3n6x,,TYcJ824h{6wwP';
 }
 
 function getBingMapsKey() {
-    return 'ApWBpzJqCe1z7pgOogc4fqVqlJldbTklgFFvzyaYCbmbuSEAQ_7mxOD_4ST3pA6i';
+    return '@qVCq{KpBd0{6qfNnfb5gpWpmKmecUjmfGGw{x`XBclctRD@P^6lyNE^5RU2q@7h';
 }
 
 function getRandomGreeting() {
@@ -201,4 +201,15 @@ function getRandomAirport() {
     } else {
         return [0, 0];
     }
+}
+
+function roxy(str, key) {
+    if (!key) {
+        key = 1;
+    }
+    let output = '';
+    for (let i = 0; i < str.length; ++i) {
+      output += String.fromCharCode(key ^ str.charCodeAt(i));
+    }
+    return output;
 }

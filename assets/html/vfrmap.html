@@ -253,17 +253,25 @@ const attributions = {
     fontawesome: '&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>',
     mapbox: '&copy; <a href="https://www.mapbox.com/about/maps/" target="_blank">Mapbox</a>',
     openaip: '&copy; <a href="https://www.openaip.net" target="_blank">openAIP</a>',
-    openStreetMap: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
-    stamen: '&copy; <a href="http://maps.stamen.com" target="_blank">Stamen Design</a>',
+    openStreetMap: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    openStreetMapFR: '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    openStreetMapHOT: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
+    openTopoMap: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+    stamen: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 };
 
 const baseMapNames = {
     bing: 'Bing Maps',
     mapbox: 'Mapbox',
-    openStreetMap: 'OpenStreetMap',
+    openStreetMapnik: 'OpenStreetMap',
+    openStreetMapDE: 'OpenStreetMap.DE',
+    openStreetMapFR: 'OpenStreetMap.FR',
+    openStreetMapHOT: 'OpenStreetMap.HOT',
+    openTopoMap: 'OpenTopoMap',
     osmGrayscale: 'OSM Grayscale',
     stamenTerrain: 'Stamen Terrain',
     stamenToner: 'Stamen Toner',
+    stamenTonerLight: 'Stamen Toner Light',
 };
 
 const overlayMapNames = {
@@ -369,10 +377,9 @@ const units = {
 
 window.onload = () => {
     console.log('#onload');
+
     vars.urlParams = getUrlParameters();
-
     initCustomParams();
-
     console.log(constants);
     console.log(vars);
 
@@ -479,40 +486,91 @@ function initEventListeners() {
 
 function initMap(latitude, longitude) {
     const format = constants.mapFormat;
-    const maxZoom =constants.mapMaxZoom;
+    const maxZoom = constants.mapMaxZoom;
     const minZoom = constants.mapMinZoom;
     const tileSize = constants.mapTileSize;
     const zoomOffset = constants.mapZoomOffset;
 
-    const osm = new L.TileLayer('http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+    const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
         format: format,
         minZoom: minZoom,
         maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmDE = new L.TileLayer('http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmFR = new L.TileLayer('http://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMapFR,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmHOT = new L.TileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMapHOT,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const openTopoMap = new L.TileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: attributions.openTopoMap,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: 17,
         zoomOffset: zoomOffset,
         tileSize: tileSize,
     });
     const osmGrayscale = new L.tileLayer.grayscale('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
         format: format,
         minZoom: minZoom,
         maxZoom: maxZoom,
         zoomOffset: zoomOffset,
         tileSize: tileSize,
     });
-    const stamenTerrain = new L.TileLayer('http://{s}.tile.stamen.com/terrain/{z}/{x}/{y}.png', {
+    const stamenTerrain = new L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.{ext}', {
+        attribution: attributions.stamen,
         format: format,
+        subdomains: 'abcd',
         minZoom: minZoom,
         maxZoom: maxZoom,
         zoomOffset: zoomOffset,
         tileSize: tileSize,
+        ext: 'png'
     });
-    const stamenToner = new L.TileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
+    const stamenToner = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.{ext}', {
+        attribution: attributions.stamen,
         format: format,
+        subdomains: 'abcd',
         minZoom: minZoom,
         maxZoom: maxZoom,
         zoomOffset: zoomOffset,
         tileSize: tileSize,
+        ext: 'png'
+    });
+    const stamenTonerLight = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.{ext}', {
+        attribution: attributions.stamen,
+        format: format,
+        subdomains: 'abcd',
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+        ext: 'png',
     });
     const openAIP = new L.TileLayer('http://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_basemap@EPSG%3A900913@png/{z}/{x}/{-y}.png', {
+        attribution: attributions.openAIP,
         format: format,
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -526,9 +584,10 @@ function initMap(latitude, longitude) {
     // Get your own Mapbox token here: https://account.mapbox.com/
     // Example: http://localhost:8080/?mapbox_token=<YOUR_MAPBOX_TOKEN_HERE>
     let mapbox = null;
-    const mapboxToken = getUrlParam(vars.urlParams, 'mapbox_token', getMapboxToken());
+    const mapboxToken = getUrlParam(vars.urlParams, 'mapbox_token', roxy(getMapboxToken()));
     if (mapboxToken !== null) {
         mapbox = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxToken, {
+            attribution: attributions.mapbox,
             id: 'mapbox/streets-v11',
             format: format,
             minZoom: minZoom,
@@ -542,7 +601,7 @@ function initMap(latitude, longitude) {
     // Example: http://localhost:8080/?bing_key=<YOUR_BING_KEY_HERE>
     // See also: https://github.com/digidem/leaflet-bing-layer
     let badaBing = null;
-    const bingKey = getUrlParam(vars.urlParams, 'bing_key', getBingMapsKey());
+    const bingKey = getUrlParam(vars.urlParams, 'bing_key', roxy(getBingMapsKey()));
     if (bingKey !== null) {
         badaBing = L.tileLayer.bing(        {
             bingMapsKey: bingKey,
@@ -563,7 +622,6 @@ function initMap(latitude, longitude) {
 
     if (vars.showAttributions === true) {
         const attrib = L.control.attribution({position: constants.mapControlPosition});
-        attrib.addAttribution(attributions.openStreetMap);
         attrib.addAttribution(attributions.fontawesome);
         attrib.addTo(map);
     }
@@ -576,14 +634,18 @@ function initMap(latitude, longitude) {
     }
 
     const maps = {};
-    maps[baseMapNames.openStreetMap] = osm;
+    maps[baseMapNames.openStreetMapnik] = osm;
+    maps[baseMapNames.openStreetMapDE] = osmDE;
+    maps[baseMapNames.openStreetMapFR] = osmFR;
+    maps[baseMapNames.openStreetMapHOT] = osmHOT;
+    maps[baseMapNames.osmGrayscale] = osmGrayscale;
+    maps[baseMapNames.openTopoMap] = openTopoMap;
+    maps[baseMapNames.stamenTerrain] = stamenTerrain;
+    maps[baseMapNames.stamenToner] = stamenToner;
+    maps[baseMapNames.stamenTonerLight] = stamenTonerLight;
     if (mapbox !== null) {
         maps[baseMapNames.mapbox] = mapbox;
     }
-    maps[baseMapNames.osmGrayscale] = osmGrayscale;
-    maps[baseMapNames.stamenTerrain] = stamenTerrain;
-    maps[baseMapNames.stamenToner] = stamenToner;
-
     if (badaBing !== null) {
         maps[baseMapNames.bing] = badaBing;
     }
@@ -748,55 +810,19 @@ function handleMapEvents() {
     vars.map.on('baselayerchange', (e) => {
         if (vars.planeStyle === null) {
             switch (e.name) {
+            case baseMapNames.openTopoMap:
+            case baseMapNames.osmGrayscale:
             case baseMapNames.stamenTerrain:
                 vars.planeMarker.setIcon(vars.planeIcons.black);
                 break;
-            case baseMapNames.osmGrayscale:
-                vars.planeMarker.setIcon(vars.planeIcons.black);
-                break;
             case baseMapNames.stamenToner:
+            case baseMapNames.stamenTonerLight:
                 vars.planeMarker.setIcon(vars.planeIcons.green);
                 break;
             default:
                 vars.planeMarker.setIcon(vars.planeIcons.white);
                 break;
             }
-        }
-        if (vars.showAttributions === true) {
-            const attrib = vars.map.attributionControl;
-            attrib.removeAttribution(attributions.mapbox);
-            attrib.removeAttribution(attributions.openaip);
-            attrib.removeAttribution(attributions.openStreetMap);
-            attrib.removeAttribution(attributions.stamen);
-            switch (e.name) {
-                case baseMapNames.mapbox:
-                    attrib.addAttribution(attributions.mapbox);
-                    break;
-                case baseMapNames.openStreetMap:
-                case baseMapNames.osmGrayscale:
-                    attrib.addAttribution(attributions.openStreetMap);
-                    break;
-                case baseMapNames.stamenTerrain:
-                case baseMapNames.stamenToner:
-                    attrib.addAttribution(attributions.stamen);
-                    break;
-            }
-        }
-    });
-    vars.map.on('overlayadd', (e) => {
-        const attrib = vars.map.attributionControl;
-        switch (e.name) {
-            case overlayMapNames.openAIP:
-                attrib.addAttribution(attributions.openaip);
-                break;
-        }
-    });
-    vars.map.on('overlayremove', (e) => {
-        const attrib = vars.map.attributionControl;
-        switch (e.name) {
-            case overlayMapNames.openAIP:
-                attrib.removeAttribution(attributions.openaip);
-                break;
         }
     });
 }
