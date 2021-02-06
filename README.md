@@ -6,9 +6,10 @@ The GoPilot is just another browser-based VFR map for [Microsoft Flight Simulato
 ## Features
 
 * VFR Map
-    * with maps from OpenStreetMap, Stamen Design, Mapbox and Bing Maps
+    * With maps and overlays from OpenStreetMap, CartoDB, Stamen Design, OpenTopoMap, Mapbox, Bing Maps, openAIP and Esri (Environmental Systems Research Institute)
     * a HUD displaying some vital/basic information
-    * a simple map marker
+    * Your latitude/longitude position
+    * a humble map marker
 * Teleport Service
     * Pick a point on the map, select the desired altitude, heading and airspeed and off you go
 
