@@ -15,14 +15,16 @@ The GoPilot is just another browser-based VFR map for [Microsoft Flight Simulato
 
 ## Releases
 
-Download the latest version [here](https://github.com/grumpypixel/msfs2020-gopilot/releases)
+Download the latest version [here](https://github.com/grumpypixel/msfs2020-gopilot/releases).
+
+Unzip the archive, run gopilot.exe and browse to http://localhost:8888 (or: http://whatever-your-ip-address-may-be:8888).
 
 ## Screenshot(s)
 <img src="https://user-images.githubusercontent.com/28186486/106658243-54170e00-659d-11eb-84e6-24e1bf66447e.png" width="20%"></img>
 
-## How do I build GoPilot?
+## How do I build GoPilot myself?
 
-Assuming you have installed Go on your machine and cloned/downloaded the repo, you can build & run GoPilot as follows:
+Assuming you have installed [Go](https://golang.org/dl/) on your machine and cloned or downloaded the repository, you can build & run GoPilot as follows:
 
 Bash:
 ```console
@@ -32,7 +34,7 @@ $ run.sh
 
 Or manually (also Bash):
 ```console
-$ CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o gopilot.exe gopilot/main.go gopilot/request_manager.go
+$ CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o gopilot/main.go gopilot/request_manager.go gopilot/assetspack.go gopilot/dllpack.go
 $ ./gopilot.exe
 ```
 
@@ -48,7 +50,7 @@ You can run the GoPilot with the following options:
 
 * Connection Name: --name <YOUR_CONNECTION_NAME> (default: "GoPilot")
 * DLL Search Path: --searchpath <PATH_TO_SIMCONNECT_DLL> (default: ".")
-* Server Address: --address <ADDR:PORT> (default: "0.0.0.0:8888")
+* Server Address: --address \<ADDR:PORT> (default: "0.0.0.0:8888")
 * Request Interval: --requestinterval <INTERVAL_IN_MILLISECONDS> (default: 250)
 * Timeout: --timeout <TIMEOUT_IN_SECONDS> (default: 600)
 
@@ -68,7 +70,7 @@ http://localhost:8888/
 ```
 Note: This will only work, of course, when the GoPilot and the browser are running on the same machine.
 
-If you want to connect to the web server from another machine, find the IP address of the computer the gopilot.exe is running on (probably something like: 192.168.1.73) and go like this:
+If you want to connect to the server from another machine, find the IP address of the computer the gopilot.exe is running on (probably something like: 192.168.1.73) and go like this:
 ```console
 http://192.168.1.73:8888/
 ```
@@ -152,7 +154,9 @@ Or open the command prompt and enter:
 $ ipconfig
 ```
 
-There you are looking for the something like this:
+ipconfig will display all current TCP/IP network configuration values.\
+Now you are looking for the something similar like this:
+
 ```console
 Wireless LAN adapter Wi-Fi:
 
@@ -161,16 +165,19 @@ Wireless LAN adapter Wi-Fi:
    Subnet Mask . . . . . . . . . . . : 255.255.255.0
    Default Gateway . . . . . . . . . : 192.168.1.1
 ```
+
 In this case, *192.168.1.73* would be your local IP address which you can use to connect to from another computer.
 
 ## Where's this SimConnect.DLL?
 
-The SimConnect.dll comes bundled with the GoPilot executable and will be extracted automatically if the DLL cannot be found in the given search paths. Please be aware that this bundled versoin may no be the latest version of SimConnect.
+The SimConnect.dll comes bundled with the GoPilot executable and will be extracted automatically if the DLL cannot be found in the given search paths. Please be aware that this bundled version may no be the latest version of SimConnect.
 
 If you want/need the latest version of the SimConnect.dll, you can find it in the MSFS2020 SDK within the following directory:\
 /MSFS SDK/Samples/SimvarWatcher/bin/x64/Release/
 
-Please have a look at the [Flight Simulator Forums](https://forums.flightsimulator.com/t/how-to-getting-started-with-the-sdk-dev-mode/123241) for further instructions if you want to know how to get and install the SDK.
+Or whatever installation path you chose for the SDK...
+
+Please have a look at the [Flight Simulator Forums](https://forums.flightsimulator.com/t/how-to-getting-started-with-the-sdk-dev-mode/123241) for further instructions if you want to know how to get and install the latest version of the SDK.
 
 ## My virus scanner thinks my Go distribution or compiled binary is infected. What the heck?!
 
@@ -190,9 +197,9 @@ Well. Every program has bugs and I'm pretty sure this one does too. Bugs are ann
 
 Just send me an e-mail and tell me about it.
 
-## What an outrage! This is all bullcrap! I absolutely dislike it!
+## This is all bullcrap! I absolutely dislike it!
 
-Same as above. Just send me an e-mail and let me know why. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from you.
+Same as above. Just send me an e-mail and let me know about your feels. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from your creation.
 
 ## Motivation
 
