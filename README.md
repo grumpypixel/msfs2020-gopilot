@@ -192,17 +192,21 @@ If you've just installed the Go distribution and the system reports it is infect
 
 In any case, if you believe the report is in error, please report a bug to the supplier of your virus scanner. Maybe in time virus scanners can learn to understand Go programs."
 
-## Are there any bugs?
+## Are there any bugs I should be aware of?
 
-Well. Every program has bugs and I'm pretty sure this one does too. Bugs are annoying and I will fix them as soon as they come up.
+Well. Every program has bugs and I'm pretty sure this one does too. Bugs are annoying and I will fix them as soon as they come up. Report bugs [here](https://github.com/grumpypixel/msfs2020-gopilot/issues).
 
-## I like this but I would like it more if...
+## I like this but I would like it even more if...
 
-Just send me an e-mail and tell me about it.
+Nice. Just [tell](https://github.com/grumpypixel/msfs2020-gopilot/issues) me about it.
 
 ## This is all bullcrap! I absolutely dislike it!
 
-Same as above. Just send me an e-mail and let me know about your feels. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from your creation.
+Same as above. Open up an [issue](https://github.com/grumpypixel/msfs2020-gopilot/issues) and let me know about your feels. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from your creation.
+
+## Help! Please!
+
+In case you are experiencing any sort of technical issues with the program or if you have awe-inspiring ideas for incredible improvements, please open up an [issue](https://github.com/grumpypixel/msfs2020-gopilot/issues). (Just so you know, any reported bug sighting will be denied as fake news. There are no bugs. There never were, there never will be. Next question.)
 
 ## Motivation
 
