@@ -3,6 +3,7 @@ package filepacker
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"html/template"
@@ -12,11 +13,12 @@ import (
 )
 
 type Content struct {
-	Tool      string
-	Timestamp string
-	Package   string
-	Func      string
-	Data      string
+	Tool     string
+	Size     string
+	Checksum string
+	Package  string
+	Func     string
+	Data     string
 }
 
 const (
@@ -25,34 +27,62 @@ const (
 )
 
 // https://gist.github.com/alex-ant/aeaaf497055590dacba760af24839b8d
-func Pack(infile, outfile, templateFile, timestamp, packageName, funcName string) {
+func Pack(infile, outfile, templateFile, packageName, funcName string) error {
 	data, err := readData(infile)
 	if err != nil {
-		panic(err)
+		return err
+	}
+
+	size := fmt.Sprintf("%d", len(data))
+
+	chksum, err := checksum(data)
+	if err != nil {
+		return err
 	}
 
 	compressedData, err := compress(data)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	hexifiedData := bytesToHexString(compressedData)
 
 	templateBytes, err := ioutil.ReadFile(templateFile)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	t, err := template.New("gopher").Parse(string(templateBytes))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	content := Content{toolName, timestamp, packageName, funcName, hexifiedData}
+	content := Content{
+		Tool:     toolName,
+		Size:     size,
+		Checksum: chksum,
+		Package:  packageName,
+		Func:     funcName,
+		Data:     hexifiedData,
+	}
 
 	var buf bytes.Buffer
-	err = t.Execute(&buf, content)
+	if err := t.Execute(&buf, content); err != nil {
+		return err
+	}
 
-	writeData(outfile, buf.String())
+	if err := writeData(outfile, buf.String()); err != nil {
+		return err
+	}
+
+	fmt.Println(" Input file:", infile)
+	fmt.Println(" Ouput file:", outfile)
+	fmt.Println(" Template:", templateFile)
+	fmt.Println(" Checksum:", chksum)
+	fmt.Println(" Size:", size)
+	fmt.Println(" Package:", packageName)
+	fmt.Println(" Getter:", funcName)
+
+	return nil
 }
 
 func Unpack(content []byte) ([]byte, error) {
@@ -96,6 +126,14 @@ func writeData(filename, content string) error {
 	defer output.Close()
 	output.WriteString(content)
 	return nil
+}
+
+func checksum(data []byte) (string, error) {
+	hasher := sha256.New()
+	if _, err := hasher.Write(data); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
 // this is probably feasible in a more efficient way, but hey, it's something

@@ -4,7 +4,6 @@ import (
 	"app/filepacker"
 	"flag"
 	"fmt"
-	"time"
 )
 
 func main() {
@@ -27,17 +26,15 @@ func main() {
 		panic("No template file specified")
 	}
 
-	fmt.Println(" Input file:", infile)
-	fmt.Println(" Ouput file:", outfile)
-	fmt.Println(" Template:", template)
-	fmt.Println(" Package:", packageName)
-	fmt.Println(" Getter:", getterName)
+	// now := time.Now()
+	// timestamp := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d.%d",
+	// 	now.Year(), now.Month(), now.Day(),
+	// 	now.Hour(), now.Minute(), now.Second(), now.Nanosecond())
+	// fmt.Println(" Timestamp:", timestamp)
 
-	now := time.Now()
-	timestamp := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d.%d",
-		now.Year(), now.Month(), now.Day(),
-		now.Hour(), now.Minute(), now.Second(), now.Nanosecond())
-	fmt.Println(" Timestamp:", timestamp)
-
-	filepacker.Pack(infile, outfile, template, timestamp, packageName, getterName)
+	err := filepacker.Pack(infile, outfile, template, packageName, getterName)
+	if err != nil {
+		fmt.Println(err)
+		// panic(err)
+	}
 }
