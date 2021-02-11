@@ -26,15 +26,8 @@ func main() {
 		panic("No template file specified")
 	}
 
-	// now := time.Now()
-	// timestamp := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d.%d",
-	// 	now.Year(), now.Month(), now.Day(),
-	// 	now.Hour(), now.Minute(), now.Second(), now.Nanosecond())
-	// fmt.Println(" Timestamp:", timestamp)
-
 	err := filepacker.Pack(infile, outfile, template, packageName, getterName)
 	if err != nil {
 		fmt.Println(err)
-		// panic(err)
 	}
 }

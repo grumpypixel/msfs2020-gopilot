@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type Content struct {
@@ -28,6 +29,7 @@ const (
 
 // https://gist.github.com/alex-ant/aeaaf497055590dacba760af24839b8d
 func Pack(infile, outfile, templateFile, packageName, funcName string) error {
+	// fmt.Println(" Reading...")
 	data, err := readData(infile)
 	if err != nil {
 		return err
@@ -35,15 +37,20 @@ func Pack(infile, outfile, templateFile, packageName, funcName string) error {
 
 	size := fmt.Sprintf("%d", len(data))
 
+	// fmt.Println(" Checksumming...")
 	chksum, err := checksum(data)
 	if err != nil {
 		return err
 	}
 
-	compressedData, err := compress(data)
+	// fmt.Println(" Compressing...")
+	compressionLevel := gzip.BestCompression
+	compressedData, err := compress(data, compressionLevel)
 	if err != nil {
 		return err
 	}
+
+	// fmt.Println(" Hexifying...")
 	hexifiedData := bytesToHexString(compressedData)
 
 	templateBytes, err := ioutil.ReadFile(templateFile)
@@ -65,11 +72,13 @@ func Pack(infile, outfile, templateFile, packageName, funcName string) error {
 		Data:     hexifiedData,
 	}
 
+	// fmt.Println(" Templating...")
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, content); err != nil {
 		return err
 	}
 
+	// fmt.Println(" Writing...")
 	if err := writeData(outfile, buf.String()); err != nil {
 		return err
 	}
@@ -136,20 +145,23 @@ func checksum(data []byte) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
-// this is probably feasible in a more efficient way, but hey, it's something
 func bytesToHexString(data []byte) string {
-	str := ""
+	var sb strings.Builder
+	// count := len(data) + len(prefix)*len(data)
+	// sb.Grow(count)
+	// fmt.Println("Count", count)
+
 	var value []byte = make([]byte, 1, 1)
 	for _, b := range data {
 		value[0] = b
-		str += fmt.Sprintf("%s%v", prefix, hex.EncodeToString(value))
+		sb.WriteString(fmt.Sprintf("%s%v", prefix, hex.EncodeToString(value)))
 	}
-	return str
+	return sb.String()
 }
 
-func compress(data []byte) ([]byte, error) {
+func compress(data []byte, compressionLevel int) ([]byte, error) {
 	var buf bytes.Buffer
-	w, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	w, err := gzip.NewWriterLevel(&buf, compressionLevel)
 	if err != nil {
 		return nil, err
 	}

@@ -3,9 +3,11 @@ package main
 import (
 	"app/filepacker"
 	"flag"
+	"fmt"
 )
 
 func main() {
+	fmt.Println("Tarifying...")
 	var input, output string
 	flag.StringVar(&input, "in", "", "Input directory")
 	flag.StringVar(&output, "out", "", "Output file")
