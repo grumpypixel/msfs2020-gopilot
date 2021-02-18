@@ -242,7 +242,7 @@ const vars = {
     showAttributions: true,
     socket: null,
     socketStatus: false,
-    markerEvent: null,
+    mapEvent: null,
     stripTitle: false,
     urlParams: {},
 };
@@ -344,7 +344,7 @@ const keyEvents = {
     'KeyT': toggleFullscreen,
 };
 
-const markerEvents = [
+const mapEvents = [
     'click',
     'dblclick',
     'contextmenu'
@@ -386,13 +386,10 @@ const units = {
     feet: 'feet',
     ft_min: 'ft/min',
     knot: 'knot',
-    // knots: 'knots',
     percent: 'percent',
 };
 
 window.onload = () => {
-    console.log('#onload');
-
     vars.urlParams = getUrlParameters();
     initCustomParams();
     console.log(constants);
@@ -440,7 +437,6 @@ window.onload = () => {
 }
 
 window.onbeforeunload = () => {
-    console.log('#onbeforeclose');
     if (constants.webSocketSupport === true) {
         deregister();
         vars.socket.onclose = () => {};
@@ -458,13 +454,13 @@ function initCustomParams() {
     vars.showUnits = getUrlParamAsBool(vars.urlParams, 'units', true);
 
     const event = getUrlParam(vars.urlParams, 'marker_event', null);
-    for (eventName of markerEvents) {
+    for (eventName of mapEvents) {
         if (event === eventName) {
-            vars.markerEvent = event;
+            vars.mapEvent = event;
         }
     }
-    if (vars.markerEvent === null) {
-        vars.markerEvent = markerEvents[0];
+    if (vars.mapEvent === null) {
+        vars.mapEvent = mapEvents[0];
     }
 }
 
@@ -859,30 +855,16 @@ function createMapMarker(latitude, longitude) {
 
         const from = [latitude, longitude];
         const to = [vars.lastData.latitude, vars.lastData.longitude];
-        const distanceMeters = calcDistance(from, to);
-
-        let distanceMetric, unitMetric = '';
-        let distanceImperial, unitImperial = '';
-        if (distanceMeters < 1000) {
-            distanceMetric = Math.round(distanceMeters);
-            unitMetric = 'm';
-            distanceImperial = Math.round(distanceMeters * 3.28); // convert meters to feet
-            unitImperial = 'ft';
-        } else {
-            distanceMetric = Number(((distanceMeters / 1000.0)).toFixed(3));
-            unitMetric = 'km';
-            distanceImperial = Number(((distanceMeters * 0.00062137)).toFixed(3)); // convert meters to miles
-            unitImperial = 'mi';
-        }
+        const distance = calcDistance(from, to) / 1852.0; // meters to nautical miles
 
         const content =
-            '<div align="center"><b>' + greeting + '</b><br>'
+            `<div align="center"><b>${greeting}</b><br>`
             + '<i class="fa fa-plane" style="font-size: 16px;color:black">&nbsp;</i>'
-            + '<span>Distance: ' + distanceMetric + unitMetric + ' / ' + distanceImperial + unitImperial + '</span><br>'
+            + `<span>Distance: ${distance.toFixed(3)}nm</span><br>`
             + '<i class="fa fa-map-marker" style="font-size: 16px;color:black">&nbsp;</i>'
-            + '<span>' + coordinates + '</span><br>'
-            + '<a href="' + openInMapsUrl + '" target="_blank">Open in Maps</a><br>'
-            + '<br><a href="javascript:void(0)" onclick="removeMapMarker();">[Remove]</a><br>'
+            + `<span>${coordinates}</span><br>`
+            + `<a href="${openInMapsUrl}" target="_blank">Open in Maps</a><br>`
+            + '<br><a href="javascript:void(0)" onclick="removeMapMarker()">[Remove]</a><br>'
             + '</div>';
         marker._popup.setContent(content);
         marker.openPopup();
@@ -903,7 +885,7 @@ function handleMapEvents() {
         updateFollowPlaneElement(vars.followPlane);
     });
 
-    vars.map.on(vars.markerEvent, (e) => {
+    vars.map.on(vars.mapEvent, (e) => {
         const pos = e.latlng;
         createMapMarker(pos.lat, pos.lng);
     });
@@ -924,9 +906,6 @@ function handleMapEvents() {
             case baseMapNames.cartoDBDarkMatter:
                 vars.planeMarker.setIcon(vars.planeIcons.green);
                 break;
-            // case baseMapNames.xoxox:
-            //     vars.planeMarker.setIcon(vars.planeIcons.gray);
-            //     break;
             default:
                 vars.planeMarker.setIcon(vars.planeIcons.white);
                 break;
@@ -960,17 +939,13 @@ function connect() {
     };
 }
 
-function checkMessage(msg) {
-    return msg.hasOwnProperty('type') === true && msg.hasOwnProperty('data') === true;
-}
-
 function handleMessage(msg) {
-    if (checkMessage(msg) === false) {
+    if (msg.hasOwnProperty('type') === false || msg.hasOwnProperty('data') === false) {
         return;
     }
     switch (msg.type) {
         case 'simvars':
-            handleSimVarMessage(msg);
+            handleSimVarsMessage(msg);
             break;
         case 'status':
             handleStatusMessage(msg);
@@ -984,8 +959,8 @@ function handleStatusMessage(msg) {
     updateConnectionIndicators();
 }
 
-function handleSimVarMessage(msg) {
-    const data = msg['data']
+function handleSimVarsMessage(msg) {
+    const data = msg['data'];
     const hasAirspeedIndicated = data.hasOwnProperty(monikers.airspeedIndicated);
     const hasAirspeedTrue = data.hasOwnProperty(monikers.airspeedTrue);
     const hasAltitudeIndicated = data.hasOwnProperty(monikers.altitudeIndicated);
@@ -1050,8 +1025,8 @@ function handleSimVarMessage(msg) {
 }
 
 function register() {
-    data = getSimVars()
-    meta = 'devoved',
+    data = getSimVars();
+    meta = 'nil';
     sendMessage('register', data, meta);
 }
 
@@ -1065,7 +1040,6 @@ function deregister() {
 
 function sendMessage(name, data, meta) {
     const msg = {type: name, data, meta, debug: 0};
-    console.log(JSON.stringify(msg));
     sendData(JSON.stringify(msg));
 }
 
@@ -1087,31 +1061,31 @@ function updatePlaneMarker(latitude, longitude, heading) {
 }
 
 function updateSpeedElements(airspeedIndicated, airspeedTrue, groundSpeed) {
-    const unit = vars.showUnits === true ? ' kt' : '';
-    elements.airspeedIndicated.innerHTML = 'IAS ' + Math.round(airspeedIndicated) + unit;
-    elements.airspeedTrue.innerHTML = 'TAS ' + Math.round(airspeedTrue) + unit;
-    elements.groundSpeed.innerHTML = 'GS ' + Math.round(groundSpeed) + unit;
+    const unit = vars.showUnits === true ? 'kts' : '';
+    elements.airspeedIndicated.innerHTML = `IAS ${Math.round(airspeedIndicated)} ${unit}`;
+    elements.airspeedTrue.innerHTML = `TAS ${Math.round(airspeedTrue)} ${unit}`;
+    elements.groundSpeed.innerHTML = `GS ${Math.round(groundSpeed)} ${unit}`;
 }
 
 function updateAltitudeElements(altitudeIndicated, altitudeAboveGround) {
-    const unit = vars.showUnits === true ? ' ft' : '';
-    elements.altitudeIndicated.innerHTML = Math.round(altitudeIndicated) + unit;
-    elements.altitudeAboveGround.innerHTML = 'AGL ' + Math.round(altitudeAboveGround) + unit;
+    const unit = vars.showUnits === true ? 'ft' : '';
+    elements.altitudeIndicated.innerHTML = `${Math.round(altitudeIndicated)} ${unit}`;
+    elements.altitudeAboveGround.innerHTML = `AGL ${Math.round(altitudeAboveGround)} ${unit}`;
 }
 
 function updateHeadingElement(headingMagnetic, headingTrue) {
     const unit = '&deg;';
-    elements.headingMagnetic.innerHTML = 'MAG ' + Math.round(headingMagnetic) + unit;
-    elements.headingTrue.innerHTML = 'TRU ' + Math.round(headingTrue) + unit;
+    elements.headingMagnetic.innerHTML = `MAG ${Math.round(headingMagnetic)}${unit}`;
+    elements.headingTrue.innerHTML = `TRU ${Math.round(headingTrue)}${unit}`;
 }
 
 function updateVerticalSpeedElement(verticalSpeed) {
-    const unit = vars.showUnits === true ? ' ft/min' : '';
-    elements.verticalSpeed.innerHTML = Math.round(verticalSpeed) + unit;
+    const unit = vars.showUnits === true ? 'ft/min' : '';
+    elements.verticalSpeed.innerHTML = `${Math.round(verticalSpeed)} ${unit}`;
 }
 
 function updateFlapsElement(flaps) {
-    elements.flaps.innerHTML = Math.round(flaps) + '&deg;';
+    elements.flaps.innerHTML = `${Math.round(flaps)}&deg;`;
 }
 
 function updateTitle(title) {
@@ -1122,8 +1096,8 @@ function updateTitle(title) {
 }
 
 function updateTrimElements(elevator, rudder) {
-    elements.trimElevator.innerHTML = elevator.toFixed(1) + '&percnt;';
-    elements.trimRudder.innerHTML = rudder.toFixed(1) + '&deg;';
+    elements.trimElevator.innerHTML = `${elevator.toFixed(1)}&percnt;`;
+    elements.trimRudder.innerHTML = `${rudder.toFixed(1)}&deg;`;
 }
 
 function updateFollowPlaneElement(checked) {
@@ -1135,7 +1109,7 @@ function updateLatLngPositionElement(latitude, longitude) {
     if (vars.dmsCoords === true) {
         str = convertLatLngToDMS(latitude, longitude, '&nbsp;');
     } else {
-        str = latitude + '&deg;&nbsp;' + longitude + '&deg;'
+        str = `${latitude}&deg;&nbsp;${longitude}&deg;`
     }
     elements.latLngPosition.innerHTML = str;
 }
@@ -1146,10 +1120,10 @@ function updateConnectionIndicators() {
 }
 
 function updateWeatherHud(outsideAirTemperature, windDirection, windSpeed) {
-    elements.outsideAirTemperature.innerHTML = Math.round(outsideAirTemperature) + ' &deg;C'
-    elements.windDirection.innerHTML = Math.round(windDirection) + '&deg;'
-    const unit = vars.showUnits === true ? ' kt' : '';
-    elements.windSpeed.innerHTML = Math.round(windSpeed) + unit;
+    elements.outsideAirTemperature.innerHTML = `${Math.round(outsideAirTemperature)} &deg;C`;
+    elements.windDirection.innerHTML = `${Math.round(windDirection)}&deg;`;
+    const unit = vars.showUnits === true ? ' kts' : '';
+    elements.windSpeed.innerHTML = `${Math.round(windSpeed)} ${unit}`;
 }
 
 function updateAtcInfo(atcAirline, atcFlightNumber, atcID) {
@@ -1218,7 +1192,6 @@ function getSimVars() {
         {name: 'PLANE LATITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.latitude},
         {name: 'PLANE LONGITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.longitude},
         {name: 'RUDDER TRIM', unit: units.degrees, type: dataTypes.float64, moniker: monikers.trimRudder},
-        // {name: 'SIM ON GROUND', unit: '', type: dataTypes.float64, moniker: monikers.simOnGround}, // this should probably be an int
         {name: 'TITLE', unit: '', type: dataTypes.string256, moniker: monikers.title},
         {name: 'TRAILING EDGE FLAPS LEFT ANGLE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.flaps},
         {name: 'VERTICAL SPEED', unit: units.ft_min, type: dataTypes.float64, moniker: monikers.verticalSpeed},

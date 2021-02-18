@@ -13,11 +13,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
 <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
-<script src="/assets/js/leaflet-bing-layer.js"></script>
 <script src="/assets/js/leaflet-rotated-marker.js"></script>
-<script src="/assets/js/leaflet-grayscale.js"></script>
 <script src="/assets/js/svg-icons-outlined.js"></script>
-<script src="/assets/js/url-params.js"></script>
 <script src="/assets/js/utils.js"></script>
 <style>
     * {
@@ -75,6 +72,7 @@
 </div>
 <script>
 const constants = {
+    mapControlPosition: 'bottomright',
     mapFormat: 'image/png',
     mapInitialZoom: 13,
     mapMarkerOpacity: 0.75,
@@ -99,19 +97,23 @@ const vars = {
     planeIcons: {},
     planeMarker: null,
     socket: null,
-    urlParams: {},
+};
+
+const attributions = {
+    openStreetMap: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    openStreetMapFR: '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    openStreetMapHOT: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
 };
 
 const baseMapNames = {
-    openStreetMap: 'OpenStreetMap',
+    openStreetMapDE: 'OpenStreetMap.DE',
+    openStreetMapFR: 'OpenStreetMap.FR',
+    openStreetMapHOT: 'OpenStreetMap.HOT',
+    openStreetMapnik: 'OpenStreetMap',
 };
 
 const dataTypes = {
-    int32: "int32",
-    int64: "int64",
-    float32: "float32",
-    float64: "float64",
-    string256: "string256",
+    float64: 'float64',
 };
 
 const elements = {
@@ -139,16 +141,9 @@ const planeIconGetters = {
 
 const units = {
     degrees: 'degrees',
-    feet: 'feet',
-    ft_min: 'ft/min',
-    knot: 'knot',
-    percent: 'percent',
 };
 
 window.onload = () => {
-    console.log('#onload');
-    vars.urlParams = getUrlParameters();
-
     console.log(constants);
     console.log(vars);
 
@@ -175,7 +170,6 @@ window.onload = () => {
 }
 
 window.onbeforeunload = () => {
-    console.log('#onbeforeclose');
     if (constants.webSocketSupport === true) {
         deregister();
         vars.socket.onclose = () => {};
@@ -204,6 +198,31 @@ function initMap(latitude, longitude) {
     const zoomOffset = constants.mapZoomOffset;
 
     const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmDE = new L.TileLayer('http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmFR = new L.TileLayer('http://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMapFR,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmHOT = new L.TileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMapHOT,
         format: format,
         minZoom: minZoom,
         maxZoom: maxZoom,
@@ -218,23 +237,36 @@ function initMap(latitude, longitude) {
         zoomControl: false,
     });
 
-    const attrib = L.control.attribution({position: 'bottomright'});
-    attrib.addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>');
+    const attrib = L.control.attribution({position: constants.mapControlPosition});
     attrib.addAttribution('&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>');
     attrib.addTo(map);
 
     const maps = {};
-    maps[baseMapNames.openStreetMap] = osm;
+    maps[baseMapNames.openStreetMapnik] = osm;
+    maps[baseMapNames.openStreetMapDE] = osmDE;
+    maps[baseMapNames.openStreetMapFR] = osmFR;
+    maps[baseMapNames.openStreetMapHOT] = osmHOT;
     osm.addTo(map);
+
+    L.control.scale({
+        position: constants.mapControlPosition,
+    }).addTo(map);
+
+    L.control.layers(maps, {}, {
+        position: constants.mapControlPosition,
+    }).addTo(map);
+
+    L.control.zoom({
+        position: constants.mapControlPosition,
+    }).addTo(map);
 
     vars.map = map;
 }
 
 function initPlaneIcons() {
-    const size = getUrlParam(vars.urlParams, 'plane_size', constants.planeSize);
     for (const [name, foo] of Object.entries(planeIconGetters)) {
         const svg = foo();
-        const icon = createLeafletIcon(svg, size);
+        const icon = createLeafletIcon(svg, constants.planeSize);
         vars.planeIcons[name] = icon;
     }
 }
@@ -276,7 +308,7 @@ function createMapMarker(latitude, longitude) {
             '<div align="center"><b>Welcome!</b><br>'
             + '<i class="fa fa-map-marker" style="font-size: 16px;color:black">&nbsp;</i>'
             + '<span>' + coordinates + '</span><br><br>'
-            + '<a href="javascript:void(0)" onclick="removeMapMarker();">[Remove]</a><br>'
+            + '<a href="javascript:void(0)" onclick="removeMapMarker()">[Remove]</a><br>'
             + '</div>';
         marker._popup.setContent(content);
         marker.openPopup();
@@ -317,16 +349,21 @@ function handleWebSocketEvents() {
 }
 
 function handleMessage(msg) {
-    if (msg.hasOwnProperty("data") === false) {
-        return
+    if (msg.hasOwnProperty('type') === false || msg.hasOwnProperty('data') === false) {
+        return;
     }
+    if (msg.type === 'simvars') {
+        handleSimVarsMessage(msg);
+    }
+}
 
-    const data = msg["data"]
+function handleSimVarsMessage(msg) {
+    const data = msg['data'];
     const hasHeadingTrue = data.hasOwnProperty(monikers.headingTrue);
     const hasLatitude = data.hasOwnProperty(monikers.latitude);
     const hasLongitude = data.hasOwnProperty(monikers.longitude);
 
-    if (hasLatitude === true&& hasLongitude === true) {
+    if (hasLatitude === true && hasLongitude === true) {
         if (vars.followPlane === true) {
             updateMap(data.latitude, data.longitude);
         }
@@ -338,22 +375,21 @@ function handleMessage(msg) {
 }
 
 function register() {
-    data = getSimVars()
-    meta = "nometa",
+    data = getSimVars();
+    meta = 'nil';
     sendMessage('register', data, meta);
 }
 
 function deregister() {
-    let vars = [];
+    let simvars = [];
     for (simVar of getSimVars()) {
-        vars.push({name: simVar.name});
+        simvars.push({name: simVar.name});
     }
-    sendMessage('deregister', {vars}, "");
+    sendMessage('deregister', {simvars}, '');
 }
 
 function sendMessage(name, data, meta) {
     const msg = {type: name, data, meta, debug: 0};
-    console.log(JSON.stringify(msg));
     sendData(JSON.stringify(msg));
 }
 

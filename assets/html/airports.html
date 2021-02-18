@@ -1,0 +1,720 @@
+<!doctype html>
+<!--[if lte IE 9]>
+<html class="ie" lang="en">
+<![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en">
+<!--<![endif]-->
+<!-- <html> -->
+<head>
+<meta charset="utf-8">
+<title>Airport Finder</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+<script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
+<script src="/assets/js/leaflet-rotated-marker.js"></script>
+<script src="/assets/js/svg-icons-outlined.js"></script>
+<script src="/assets/js/utils.js"></script>
+<style>
+    * {
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+    }
+    #center_on_plane {
+        margin: 0 0 4px 0;
+        cursor: pointer;
+    }
+    #map {
+        background-color: gray;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+    #overlay_top {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, 0%);
+        margin: 4px;
+        padding: 4px 8px 4px 8px;
+        border-radius: 8px;
+        background-color: black;
+        color: white;
+        font-size: 1em;
+        background-color: rgba(0,0,0,0.75);
+        text-align: center;
+        z-index: 2;
+    }
+    #overlay_bottom {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%, 0%);
+        margin: 4px;
+        padding: 4px 8px 4px 8px;
+        border-radius: 8px;
+        background-color: black;
+        color: white;
+        font-size: 1em;
+        background-color: rgba(0,0,0,0.75);
+        text-align: center;
+        z-index: 3;
+        visibility: hidden;
+    }
+    #overlay_plane {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        min-width: 80px;
+        margin: 4px;
+        padding: 4px 8px 4px 8px;
+        border-radius: 8px;
+        color: white;
+        text-align: center;
+        font-size: 1.1em;
+        background-color: rgba(0,0,0,0.75);
+        z-index: 4;
+    }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="overlay_plane">
+    <div id="center_on_plane" title="Click to center on plane ('C')">
+        <i class="fa fa-plane" style="font-size: 32px;color:white; margin: 4px;" onclick="centerOnPlane()"></i>
+    </div>
+    <div>
+        <input type="checkbox" id="follow_plane" onclick="handleFollowPlaneClick(this)" />
+        <label onclick="toggleFollowPlane()" title="Click to follow plane ('F')">Follow</label>
+    </div>
+</div>
+<div id="overlay_top">
+    <table>
+        <tr>
+            <td><span id="overlay_top_text">Left-click anywhere on the map to set the origin of your search</span></td>
+        </tr>
+    </table>
+</div>
+<div id="overlay_bottom">
+    <table>
+        <tr>
+            <td colspan="3">
+                <img src="/assets/svg/dot-circle-regular.svg" height="12px" />
+                <span id="lat_lng_position">&nbsp;</span>
+            </td>
+        </tr>
+        <tr>
+            <td><label>Search Radius</label></td>
+            <td><input type="range" min="10" max="500" value="50" step="1" oninput="onChangeSearchRadius(this)" /></td>
+            <td><label id="search_radius">&nbsp;</label></td>
+        </tr>
+        <tr>
+            <td><label>Max. Airports</label></td>
+            <td><input type="range" min="1" max="100" value="10" step="1" oninput="onChangeMaxAirports(this)" /></td>
+            <td><label id="max_airports">&nbsp;</label></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <input type="checkbox" id="small_airports" checked="true" />
+                <label>Small</label>
+                <input type="checkbox" id="medium_airports" checked="true" />
+                <label>Medium</label>
+                <input type="checkbox" id="large_airports" checked="true" />
+                <label>Large</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <input type="checkbox" id="closed_airports" />
+                <label>Closed</label>
+                <input type="checkbox" id="heliports" />
+                <label>Heliport</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <input type="button" value="Find Airports" onclick="findAirports()" />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <input type="button" value="Clear Search Results" onclick="removeAllAirportMarkers()" />
+            </td>
+        </tr>
+    </table>
+</div>
+<script>
+const constants = {
+    mapControlPosition: 'bottomright',
+    mapFormat: 'image/png',
+    mapInitialZoom: 7,
+    mapMaxZoom: 18,
+    mapMinZoom: 1,
+    mapTileSize: 256,
+    mapZoomOffset: 0,
+    planeSize: 64,
+    webSocketSupport: 'WebSocket' in window,
+    webSocketAddress: 'ws://' + window.location.hostname + ':' + window.location.port + '/ws',
+};
+
+const vars = {
+    airportMarkers: {},
+    firstClick: false,
+    followPlane: true,
+    lastData: {
+        heading_true: 0,
+        latitude: 0,
+        longitude: 0,
+    },
+    map: null,
+    planeIcons: {},
+    planeMarker: null,
+    selectedLatLng: [0.0, 0.0],
+    socket: null,
+    maxAirports: 10,
+    searchRing: null,
+    searchLatitude: 0.0,
+    searchLongitude: 0.0,
+    searchRadius: 50.0,
+    topOverlayVisible: true,
+};
+
+const airportTypes = {
+    'small_airport': 'Small',
+    'medium_airport': 'Medium',
+    'large_airport': 'Large',
+};
+
+const attributions = {
+    openStreetMap: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    openStreetMapFR: '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    openStreetMapHOT: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
+};
+
+const baseMapNames = {
+    openStreetMapDE: 'OpenStreetMap.DE',
+    openStreetMapFR: 'OpenStreetMap.FR',
+    openStreetMapHOT: 'OpenStreetMap.HOT',
+    openStreetMapnik: 'OpenStreetMap',
+};
+
+const dataTypes = {
+    float64: 'float64',
+};
+
+const elements = {
+    followPlane: null,
+    bottomOverlay: null,
+    latLngPosition: null,
+    maxAirports: null,
+    searchRadius: null,
+    smallAirports: null,
+    mediumAirports: null,
+    largeAirports: null,
+    closedAirports: null,
+    heliports: null,
+};
+
+const keyEvents = {
+    'KeyC': centerOnPlane,
+    'KeyF': toggleFollowPlane,
+    'KeyT': toggleFullscreen,
+};
+
+const monikers = {
+    headingTrue: 'heading_true',
+    latitude: 'latitude',
+    longitude: 'longitude',
+};
+
+const planeIconGetters = {
+    black: getSvgPlaneIconBlackWhite,
+    gray: getSvgPlaneIconGrayBlack,
+    green: getSvgPlaneIconGreenBlack,
+    white: getSvgPlaneIconWhiteBlack,
+};
+
+const units = {
+    degrees: 'degrees',
+};
+
+window.onload = () => {
+    console.log(constants);
+    console.log(vars);
+
+    if (constants.webSocketSupport === true) {
+        vars.socket = new WebSocket(constants.webSocketAddress);
+        handleWebSocketEvents();
+    }
+
+    initElements();
+    initEventListeners();
+
+    const latLng = getRandomAirport();
+    const latitude = latLng[0];
+    const longitude = latLng[1];
+
+    initMap(latitude, longitude);
+    handleMapEvents();
+
+    initPlaneIcons();
+    initPlaneMarker(latitude, longitude);
+
+    vars.lastData.latitude = latitude;
+    vars.lastData.longitude = longitude;
+}
+
+window.onbeforeunload = () => {
+    if (constants.webSocketSupport === true) {
+        deregister();
+        vars.socket.onclose = () => {};
+        vars.socket.close();
+    }
+};
+
+function initElements() {
+    elements.followPlane = document.getElementById('follow_plane');
+    elements.bottomOverlay = document.getElementById('overlay_bottom');
+    elements.latLngPosition = document.getElementById('lat_lng_position');
+    elements.maxAirports = document.getElementById('max_airports');
+    elements.searchRadius = document.getElementById('search_radius');
+    elements.smallAirports = document.getElementById('small_airports');
+    elements.mediumAirports = document.getElementById('medium_airports');
+    elements.largeAirports = document.getElementById('large_airports');
+    elements.closedAirports = document.getElementById('closed_airports');
+    elements.heliports = document.getElementById('heliports');
+    updateFollowPlaneElement(vars.followPlane);
+    updateSearchRadiusElement(vars.searchRadius);
+    updateMaxAirportsElement(vars.maxAirports);
+}
+
+function initEventListeners() {
+    document.addEventListener('keyup', event => {
+        if (keyEvents.hasOwnProperty(event.code)) {
+            keyEvents[event.code]();
+        }
+    });
+}
+
+function initMap(latitude, longitude) {
+    const format = constants.mapFormat;
+    const maxZoom =constants.mapMaxZoom;
+    const minZoom = constants.mapMinZoom;
+    const tileSize = constants.mapTileSize;
+    const zoomOffset = constants.mapZoomOffset;
+
+    const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmDE = new L.TileLayer('http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMap,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmFR = new L.TileLayer('http://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMapFR,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const osmHOT = new L.TileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        attribution: attributions.openStreetMapHOT,
+        format: format,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        zoomOffset: zoomOffset,
+        tileSize: tileSize,
+    });
+    const map = new L.Map('map', {
+        layers: osm,
+        center: [latitude, longitude],
+        zoom: constants.mapInitialZoom,
+        attributionControl: false,
+        zoomControl: false,
+    });
+
+    const attrib = L.control.attribution({position: constants.mapControlPosition});
+    attrib.addAttribution('&copy; <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a>');
+    attrib.addAttribution('&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>');
+    attrib.addTo(map);
+
+    const maps = {};
+    maps[baseMapNames.openStreetMapnik] = osm;
+    maps[baseMapNames.openStreetMapDE] = osmDE;
+    maps[baseMapNames.openStreetMapFR] = osmFR;
+    maps[baseMapNames.openStreetMapHOT] = osmHOT;
+    osm.addTo(map);
+
+    L.control.scale({
+        position: constants.mapControlPosition,
+    }).addTo(map);
+
+    L.control.layers(maps, {}, {
+        position: constants.mapControlPosition,
+    }).addTo(map);
+
+    L.control.zoom({
+        position: constants.mapControlPosition,
+    }).addTo(map);
+
+    vars.map = map;
+}
+
+function initPlaneIcons() {
+    for (const [name, foo] of Object.entries(planeIconGetters)) {
+        const svg = foo();
+        const icon = createLeafletIcon(svg, constants.planeSize);
+        vars.planeIcons[name] = icon;
+    }
+}
+
+function initPlaneMarker(latitude, longitude) {
+    const latLngPos = [latitude, longitude];
+    const rotation = 0;
+    let icon = vars.planeIcons.white;
+    vars.planeMarker = createPlaneMarker(latLngPos, rotation, icon);
+    vars.planeMarker.addTo(vars.map);
+}
+
+function createPlaneMarker(latLngPosition, rotation, icon) {
+    return L.marker(latLngPosition, {
+        icon: icon,
+        rotationAngle: rotation,
+        rotationOrigin: 'center',
+    });
+}
+
+function createLeafletIcon(svg, size) {
+    const iconSize = [size, size];
+    const iconUrl = encodeURI('data:image/svg+xml,' + svg).replace('#', '%23');
+    return L.icon({iconUrl, iconSize});
+}
+
+function createSearchRing(latitude, longitude) {
+    if (vars.searchRing !== null) {
+        vars.map.removeLayer(vars.searchRing);
+    }
+    const circle = L.circle([latitude, longitude], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.5,
+        radius: vars.searchRadius * 1.852 * 1000.0,
+    });
+    circle.addTo(vars.map);
+    vars.searchRing = circle;
+}
+
+function removeSearchRing() {
+    if (vars.searchRing !== null) {
+        vars.map.removeLayer(vars.searchRing);
+        vars.searchRing = null;
+        hideBottomOverlay(false);
+    }
+}
+
+function createAirportMarker(icao, type, name, latitude, longitude, elevation) {
+    const marker = L.marker([latitude, longitude]);
+
+    const initialContent = '<div align="center"><b>Hey!</b></div>';
+    marker.bindPopup(initialContent);
+
+    if (airportTypes.hasOwnProperty(type) === true) {
+        type = airportTypes[type];
+    }
+
+    marker.on('click', (e) => {
+        const content =
+            '<div align="center">'
+            + `<span><b>${icao}</b></span><br>`
+            + `<span><b>${name}</b></span><br>`
+            + '<i class="fa fa-map-marker" style="font-size: 16px;color:black">&nbsp;</i>'
+            + `<span>${latitude}&deg;&nbsp;${longitude}&deg;</span><br>`
+            + `<span>Elevation: ${elevation} ft</span><br>`
+            + `<span>Type: ${type}</span><br><br>`
+            + `<a href="javascript:void(0)" onclick="removeAirportMarker(\'${icao}\')">[Remove]</a><br>`
+            + `<a href="javascript:void(0)" onclick="removeAllOtherAirportMarkers(\'${icao}\')">[Remove Others]</a><br>`
+            + '</div>';
+        marker._popup.setContent(content);
+        marker.openPopup();
+    });
+    marker.addTo(vars.map);
+    return marker;
+}
+
+function removeAirportMarker(icao) {
+    if (vars.airportMarkers.hasOwnProperty(icao) === false) {
+        return;
+    }
+    const marker = vars.airportMarkers[icao];
+    vars.map.removeLayer(marker);
+    delete vars.airportMarkers[icao];
+}
+
+function removeAllOtherAirportMarkers(icao) {
+    for (const [key, marker] of Object.entries(vars.airportMarkers)) {
+        if (key !== icao) {
+            vars.map.removeLayer(marker);
+            delete vars.airportMarkers[key];
+        }
+    }
+}
+
+function removeAllAirportMarkers() {
+    for (const [key, marker] of Object.entries(vars.airportMarkers)) {
+        vars.map.removeLayer(marker);
+        delete vars.airportMarkers[key];
+    }
+}
+
+function handleMapEvents() {
+    vars.map.on('dragstart', (e) => {
+        vars.followPlane = false;
+        updateFollowPlaneElement(vars.followPlane);
+    });
+    vars.map.on('click', (e) => {
+        const pos = e.latlng;
+        vars.searchLatitude = pos.lat;
+        vars.searchLongitude = pos.lng;
+
+        createSearchRing(pos.lat, pos.lng);
+        showBottomOverlay(pos.lat, pos.lng);
+        updateLatLngPositionElement(pos.lat, pos.lng);
+
+        if (vars.firstClick === false) {
+            vars.firstClick = true;
+            const element = document.getElementById('overlay_top_text');
+            element.innerHTML = 'Right-click anywhere on the map to hide the search ring';
+        }
+    });
+    vars.map.on('contextmenu', (e) => {
+        removeSearchRing();
+        if (vars.topOverlayVisible === true) {
+            const element = document.getElementById('overlay_top');
+            element.style.visibility = 'hidden';
+            vars.topOverlayVisible = false;
+        }
+    });
+}
+
+function handleWebSocketEvents() {
+    vars.socket.onopen = () => {
+        console.log('connected.');
+        register();
+    };
+    vars.socket.onclose = () => {
+        console.log('disconnected.');
+    };
+    vars.socket.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        handleMessage(msg);
+    };
+}
+
+function handleMessage(msg) {
+    if (msg.hasOwnProperty('type') === false || msg.hasOwnProperty('data') === false) {
+        return;
+    }
+    switch (msg.type) {
+        case 'simvars':
+            handleSimVarsMessage(msg);
+            break;
+        case 'airports':
+            handleAirportsMessage(msg);
+            break;
+    }
+}
+
+function handleSimVarsMessage(msg) {
+    const data = msg['data'];
+    const hasHeadingTrue = data.hasOwnProperty(monikers.headingTrue);
+    const hasLatitude = data.hasOwnProperty(monikers.latitude);
+    const hasLongitude = data.hasOwnProperty(monikers.longitude);
+
+    if (hasLatitude === true && hasLongitude === true) {
+        if (vars.followPlane === true) {
+            updateMap(data.latitude, data.longitude);
+        }
+        if (hasHeadingTrue === true) {
+            updatePlaneMarker(data.latitude, data.longitude, data.heading_true);
+        }
+    }
+    vars.lastData = msg.data;
+}
+
+function handleAirportsMessage(msg) {
+    const airports = msg['data'];
+    airports.forEach((airport, index) => {
+        const icao = airport['icao'];
+        if (vars.airportMarkers.hasOwnProperty(icao) === false) {
+            marker = createAirportMarker(airport['icao'], airport['type'], airport['name'], airport['latitude'], airport['longitude'], airport['elevation']);
+            vars.airportMarkers[icao] = marker;
+        }
+    });
+}
+
+function register() {
+    data = getSimVars();
+    meta = 'nil';
+    sendMessage('register', data, meta);
+}
+
+function deregister() {
+    let simvars = [];
+    for (simVar of getSimVars()) {
+        simvars.push({name: simVar.name});
+    }
+    sendMessage('deregister', {simvars}, '');
+}
+
+function findAirports() {
+    const latitude = vars.selectedLatLng[0];
+    const longitude = vars.selectedLatLng[1];
+    const radius = vars.searchRadius * 1.852 * 1000.0;
+    const maxAirports = vars.maxAirports;
+
+    let filter = '';
+    if (elements.closedAirports.checked === true) {
+        filter += 'closed';
+    }
+    if (elements.heliports.checked === true) {
+        filter += filter ? '|' : '';
+        filter += 'heliport';
+    }
+    if (elements.smallAirports.checked === true) {
+        filter += filter ? '|' : '';
+        filter += 'small_airport';
+    }
+    if (elements.mediumAirports.checked === true) {
+        filter += filter ? '|' : '';
+        filter += 'medium_airport';
+    }
+    if (elements.largeAirports.checked === true) {
+        filter += filter ? '|' : '';
+        filter += 'large_airport';
+    }
+
+    data = {latitude, longitude, radius, maxAirports, filter};
+    meta = 'nil';
+    sendMessage('airports', data, meta);
+}
+
+function sendMessage(name, data, meta) {
+    const msg = {type: name, data, meta, debug: 0};
+    sendData(JSON.stringify(msg));
+}
+
+function sendData(data) {
+    if (constants.webSocketSupport === true) {
+        vars.socket.send(data);
+    }
+}
+
+function updateMap(latitude, longitude) {
+    const latLngPos = [latitude, longitude];
+    vars.map.panTo(latLngPos);
+}
+
+function updatePlaneMarker(latitude, longitude, heading) {
+    const latLngPos = [latitude, longitude];
+    vars.planeMarker.setLatLng(latLngPos);
+    vars.planeMarker.setRotationAngle(heading);
+}
+
+function updateFollowPlaneElement(checked) {
+    elements.followPlane.checked = checked;
+}
+
+function updateLatLngPositionElement(latitude, longitude) {
+    const str = convertLatLngToDMS(latitude, longitude, '&nbsp;');
+    elements.latLngPosition.innerHTML = str;
+}
+
+function handleFollowPlaneClick(e) {
+    vars.followPlane = e.checked;
+    updateFollowPlaneElement(vars.followPlane);
+    updateFollowPlaneMap();
+}
+
+function toggleFollowPlane() {
+    vars.followPlane = !vars.followPlane;
+    updateFollowPlaneElement(vars.followPlane);
+    updateFollowPlaneMap();
+}
+
+function updateFollowPlaneMap() {
+    if (vars.followPlane === true) {
+        const latLngPos = [vars.lastData.latitude, vars.lastData.longitude];
+        vars.map.setView(latLngPos, vars.map.getZoom());
+    }
+}
+
+function centerOnPlane() {
+    const latLngPos = [vars.lastData.latitude, vars.lastData.longitude];
+    vars.map.setView(latLngPos, vars.map.getZoom());
+}
+
+function showBottomOverlay(latitude, longitude) {
+    vars.selectedLatLng[0] = latitude;
+    vars.selectedLatLng[1] = longitude;
+
+    elements.bottomOverlay.style.visibility = 'visible';
+}
+
+function hideBottomOverlay(latitude, longitude) {
+    elements.bottomOverlay.style.visibility = 'hidden';
+}
+
+function onChangeSearchRadius(e) {
+    vars.searchRadius = parseInt(e.value);
+    updateSearchRadiusElement(vars.searchRadius);
+    if (vars.searchRing !== null) {
+        createSearchRing(vars.searchLatitude, vars.searchLongitude);
+    }
+}
+
+function onChangeMaxAirports(e) {
+    vars.maxAirports = parseInt(e.value);
+    updateMaxAirportsElement(vars.maxAirports);
+}
+
+function updateSearchRadiusElement(value) {
+    elements.searchRadius.innerHTML = value + ' nm';
+}
+
+function updateMaxAirportsElement(value) {
+    elements.maxAirports.innerHTML = value;
+}
+
+function getSimVars() {
+    return [
+        {name: 'PLANE HEADING DEGREES TRUE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.headingTrue},
+        {name: 'PLANE LATITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.latitude},
+        {name: 'PLANE LONGITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.longitude},
+    ];
+}
+</script>
+</body>
+</html>

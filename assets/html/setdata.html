@@ -9,7 +9,6 @@
 <head>
 <meta charset="utf-8">
 <title>SetData</title>
-<script src="/assets/js/url-params.js"></script>
 <style>
     * {
         font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
@@ -37,28 +36,29 @@
     <div id="form" align="center">
     <table>
         <tr>
-            <td><label for="name">SimVar:&nbsp;</label></td>
+            <td><label>SimVar:&nbsp;</label></td>
             <td><input type="text" id="name" /></td>
         </tr>
         <tr>
-            <td><label for="name">Unit:&nbsp;</label></td>
+            <td><label>Unit:&nbsp;</label></td>
             <td><input type="text" id="unit" /></td>
         </tr>
         <tr>
-            <td><label for="name">Value:&nbsp;</label></td>
+            <td><label>Value:&nbsp;</label></td>
             <td><input type="number" id="value" /></td>
         </tr>
         <tr>
-            <td>&nbsp;</td>
-            <td><button type="button" onclick="prepareMessage()">Send</button></td>
+            <td colspan="2">
+                <button type="button" onclick="prepareMessage()">Send</button>
+            </td>
         </tr>
 </table>
 </div>
 <script>
 function prepareMessage() {
-    name = document.getElementById("name").value;
-    unit = document.getElementById("unit").value;
-    value = document.getElementById("value").value;
+    name = document.getElementById('name').value;
+    unit = document.getElementById('unit').value;
+    value = document.getElementById('value').value;
     value = parseFloat(value);
 
     console.log(`name: ${name} unit: ${unit} value: ${value}`);
@@ -84,35 +84,13 @@ const constants = {
 
 const vars = {
     socket: null,
-    urlParams: {},
-};
-
-const elements = {
-};
-
-const dataTypes = {
-    int32: "int32",
-    int64: "int64",
-    float32: "float32",
-    float64: "float64",
-    string256: "string256",
-}
-
-const units = {
-    degrees: 'degrees',
-    feet: 'feet',
-    ft_min: 'ft/min',
-    knot: 'knot',
-    percent: 'percent',
 };
 
 window.onload = () => {
-    vars.urlParams = getUrlParameters();
     if (constants.webSocketSupport === true) {
         vars.socket = new WebSocket(constants.webSocketAddress);
         handleWebSocketEvents();
     }
-    initElements();
 }
 
 window.onbeforeunload = () => {
@@ -121,10 +99,6 @@ window.onbeforeunload = () => {
         vars.socket.close();
     }
 };
-
-function initElements() {
-    // elements.followPlane = document.getElementById('follow_plane');
-}
 
 function handleWebSocketEvents() {
     vars.socket.onopen = () => {
@@ -135,13 +109,11 @@ function handleWebSocketEvents() {
     };
     vars.socket.onmessage = (e) => {
         const msg = JSON.parse(e.data);
-        // console.log(msg);
     };
 }
 
 function sendMessage(name, data, meta) {
     const msg = {type: name, data, meta, debug: 0};
-    console.log(JSON.stringify(msg));
     sendData(JSON.stringify(msg));
 }
 
@@ -150,14 +122,6 @@ function sendData(data) {
         vars.socket.send(data);
     }
 }
-
-// function getSimVars() {
-//     return [
-//         {name: 'PLANE HEADING DEGREES TRUE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.headingTrue},
-//         {name: 'PLANE LATITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.latitude},
-//         {name: 'PLANE LONGITUDE', unit: units.degrees, type: dataTypes.float64, moniker: monikers.longitude},
-//     ];
-// }
 </script>
 </body>
 </html>

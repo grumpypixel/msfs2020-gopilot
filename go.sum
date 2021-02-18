@@ -8,3 +8,5 @@ github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0U
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grumpypixel/msfs2020-simconnect-go v0.3.0 h1:TGxIGBzb5PxvSR8ADAnduNsQ2GX7lIISCQLNMgzpqkw=
 github.com/grumpypixel/msfs2020-simconnect-go v0.3.0/go.mod h1:8Crqr9ua1jNO/CM0OMPQ6fDtNga1FgclefvK0fPgGaA=
+github.com/grumpypixel/msfs2020-simconnect-go v0.3.1 h1:QL6x3EWjm7XcDY/WIFJeu8TO0PSvq84o59fypwJuT1A=
+github.com/grumpypixel/msfs2020-simconnect-go v0.3.1/go.mod h1:8Crqr9ua1jNO/CM0OMPQ6fDtNga1FgclefvK0fPgGaA=

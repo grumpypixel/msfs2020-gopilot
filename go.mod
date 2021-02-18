@@ -7,5 +7,5 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/grumpypixel/msfs2020-simconnect-go v0.3.0
+	github.com/grumpypixel/msfs2020-simconnect-go v0.3.1
 )

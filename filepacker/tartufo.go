@@ -65,7 +65,6 @@ func Tar(sourceDir, destDir string) error {
 
 // https://golangdocs.com/tar-gzip-in-golang
 func Untar(tarball, targetDir string) error {
-	// fmt.Println("Untar", tarball, target)
 	reader, err := os.Open(tarball)
 	if err != nil {
 		return err

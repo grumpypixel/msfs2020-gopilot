@@ -42,16 +42,17 @@ function getUrlParamAsFloat(params, key, defaultValue) {
 // see https://stackoverflow.com/questions/263965/how-can-i-convert-a-string-to-boolean-in-javascript
 function stringToBool(str, defaultValue) {
     switch (str.toLowerCase().trim()) {
+        case "1":
         case "true":
         case "yes":
         case "yay":
-        case "1":
+        case "yeah":
             return true;
+        case "0":
         case "false":
         case "no":
         case "nay":
         case "nope":
-        case "0":
         case null:
             return false;
         default:

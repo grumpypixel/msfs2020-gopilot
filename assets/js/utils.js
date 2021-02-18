@@ -129,6 +129,8 @@ function getRandomAirport() {
         [48.350891, 11.777215], // EDDM
         [60.309704, 24.943562], // EFHK
         [53.360126, -2.26935], // EGCC
+        [59.351121, -2.899011], // EGEP
+        [59.351201, -2.951463], // EGEW
         [51.397408, -3.337534], // EGFF
         [51.154427, -0.177063], // EGKK
         [51.468273, -0.449825], // EGLL
@@ -168,6 +170,7 @@ function getRandomAirport() {
         [41.286148, 2.074367], // LEBL
         [40.489525, -3.563492], // LEMD
         [39.547491, 2.736262], // LEPA
+        [44.829159, -0.701476], // LFBD
         [45.396843, 6.632939], // LFLJ
         [48.999985, 2.54299], // LFPG
         [37.92857, 23.93948], // LGAV
@@ -222,6 +225,7 @@ function getRandomAirport() {
         [-31.944918, 115.968629], // YPPH
         [-33.935139, 151.176849], // YSSY
     ];
+    return airports[0];
     if (airports.length > 0) {
         return airports[Math.floor(Math.random() * airports.length)];
     } else {
