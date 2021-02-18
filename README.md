@@ -242,9 +242,9 @@ A big thank you goes out to Microsoft and especially to all the peeps at [Asobo]
 Big, hearty thank yous go out to [Pilot Emilie](https://www.youtube.com/c/Pilotemilie/about) and [Squirrel](https://www.youtube.com/squirrel/about) for their fun and educational videos.
 And thanks to the whole, supporting Potato Gang.
 
-Big thanks go out to [David Megginson](http://ourairports.com/about.html#credits) and all contributors of OurAirports.com. What an impressive piece of collected awesomenes!
+Big thanks go out to [David Megginson](http://ourairports.com/about.html#credits) and all contributors of OurAirports.com. What an impressive piece of collected awesomeness!
 
 Cheers,\
-coffeecookie#884@EDDL
+grumpypixel/coffeecookie#884@EDDL
 
 CLEAR PROP!!!
