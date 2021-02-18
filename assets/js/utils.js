@@ -225,7 +225,6 @@ function getRandomAirport() {
         [-31.944918, 115.968629], // YPPH
         [-33.935139, 151.176849], // YSSY
     ];
-    return airports[0];
     if (airports.length > 0) {
         return airports[Math.floor(Math.random() * airports.length)];
     } else {
