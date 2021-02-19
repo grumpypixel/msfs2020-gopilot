@@ -13,7 +13,7 @@ GoPilot is just another browser-based [VFR Map](https://en.wikipedia.org/wiki/Vi
 * Teleport Service
     * Pick a point on the map, select the desired altitude, heading and airspeed and off you go! *wheee!*
 * Airport Finder
-    * Locate airports anywhere on the map within a specific radius using [OurAirports](https://ourairports.com) database
+    * Locate airports anywhere on the map within a specific radius using data from [OurAirports](https://ourairports.com)
 
 ## Releases
 
@@ -27,9 +27,9 @@ Unzip the archive, run gopilot.exe and browse to `http://localhost:8888` (or: `h
 <img src="https://user-images.githubusercontent.com/28186486/107130276-0fa4ae80-68cc-11eb-8a6e-4b9d2638fe5e.png" width="20%"></img>
 <img src="https://user-images.githubusercontent.com/28186486/107130277-129f9f00-68cc-11eb-9120-14a9ecce852d.png" width="20%"></img>
 
-## The GoPilot is running. Now what?
+## GoPilot is running. Now what?
 
-The gopilot.exe starts a local web server which you can connect to with a browser.
+The gopilot executable starts a local web server which you can connect to with a browser.
 
 VFR Map:\
 `http://localhost:8888`\
@@ -44,7 +44,7 @@ Airport Finder:\
 
 ## GoPilot command-line options
 
-You can run the GoPilot with the following options:
+You can run GoPilot with the following options:
 
 * Connection Name: --name <YOUR_CONNECTION_NAME> (default: "GoPilot")
 * DLL Search Path: --searchpath <PATH_TO_SIMCONNECT_DLL> (default: ".")
@@ -54,24 +54,24 @@ You can run the GoPilot with the following options:
 
 Example:
 ```console
-$ gopilot.exe --name POTATOSQUAD --searchpath ../.. --address 0.0.0.13370 --timeout 1000
+$ gopilot.exe --name POTATOSQUAD --searchpath ../.. --address 0.0.0.13370 --requestinterval 200 --timeout 1000
 ```
 
 ## Web Server API
 
 The following routes are available:
 * `/` or `/vfrmap` opens the VFR map
-* `/teleport` opens the Teleport Service. Be advised not to teleport yourself into the ground mistakenly.
 * `/airports` opens the Airport Finder
-* `/mehmap` opens a plain & simple map without distractions. (So no HUD. No nothing. Meh.)
+* `/teleport` opens the Teleport Service. Be advised not to teleport yourself into the ground mistakenly.
+* `/mehmap` opens a plain & simple map without distractions. (No HUD. No nothing. Meh.)
 * `/setdata` opens an *experimental* and *hideous* page where you can manually set data on the *sim object*. DO NOT USE THIS if you don't know what you're doing. This might (and probably will) CRASH your simulator. Seriously.
-* `/simvars` display all registered simulation variables (no auto-update)
-* `/debug` display debug information (also no auto-update)
+* `/simvars` displays all registered simulation variables (no auto-update)
+* `/debug` displays debug information (also no auto-update)
 
 Examples:
 * `http://localhost:8888/vfrmap` or simply: `http://localhost:8888`
-* `http://localhost:8888/teleport`
 * `http://localhost:8888/airports`
+* `http://localhost:8888/teleport`
 * `http://localhost:8888/mehmap`
 * `http://localhost:8888/setdata`
 * `http://localhost:8888/simvars`
@@ -111,21 +111,21 @@ List of available options:
 * `mapbox_token=<token>` - use your own token for [Mapbox](https://docs.mapbox.com/help/tutorials/get-started-tokens-api/) since the one provided is limited
 * `bing_key=<key>` - use your own key for [Bing Maps](https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key) since the one provided is also limited
 
-Note: Boolean parameters can be entered as *true* or *false*, *1* or *0*, *yes* or *no*, *yay* or *nay*.
+Note: Boolean parameters can be entered as *true* or *false*, *1* or *0*, *yes* or *no*, *yay* or *nay*, *yeah* or *nope*.
 
 Random example:
 ```console
 http://localhost:8888/?plane_style=green&plane_size=128&plane_opacity=0.73&open_in=bing&dms_coords=0&watermark=1&watermark_url=https://media.giphy.com/media/SgwPtMD47PV04/giphy.gif&watermark_size=256px&marker_event=contextmenu&layer_control=0&scale_control=0&zoom_control=false&attributions=0
 ```
 
-Or go ZEN and switch off all overlays:
+Or go zen and switch off all overlays:
 ```console
 http://localhost:8888/?hud=0&plane_overlay=0&position_overlay=0&scale_control=0&layer_control=0&zoom_control=0&attributions=0
 ```
 
 ## VFR Map Keyboard Shortcuts
 
-These are the available keyboard shortcuts on the VFR map:
+The available keyboard shortcuts for the VFR map are:
 
 * C - Center on Plane
 * F - Follow Plane
@@ -163,31 +163,29 @@ $ ipconfig
 ```
 
 ipconfig will display all current TCP/IP network configuration values.\
-Now you are looking for the something similar like this:
+There you are looking for something like this:
 
 ```console
 Wireless LAN adapter Wi-Fi:
 
-   Connection-specific DNS Suffix  . : fritz.box
-   IPv4 Address. . . . . . . . . . . : 192.168.1.73
+   Connection-specific DNS Suffix  . : wicked.wifi.box
+   IPv4 Address. . . . . . . . . . . : 192.168.0.73
    Subnet Mask . . . . . . . . . . . : 255.255.255.0
-   Default Gateway . . . . . . . . . : 192.168.1.1
+   Default Gateway . . . . . . . . . : 192.168.0.1
 ```
 
-In this case, *192.168.1.73* would be your local IP address which you can use to connect to from another computer.
+In this case, *192.168.0.73* would be your local IP address which you can use to connect to from another computer.
 
-So instead of `http://localhost:8888` you would enter `http://192.168.173:8888` in your browser's address bar.
+So instead of `http://localhost:8888` you would enter `http://192.168.0.73:8888` in your browser's address bar.
 
-## Where's this SimConnect.DLL?
+## Where's this SimConnect.dll?
 
-The SimConnect.dll comes bundled with the GoPilot executable and will be extracted automatically if the DLL cannot be found in the given search paths. Please be aware that this bundled version may no be the latest version of SimConnect.
+The SimConnect.dll comes bundled with the GoPilot executable and will be extracted automatically if the DLL cannot be found in the given search paths. Please be aware that this bundled version may not be the latest version of SimConnect.
 
-If you want/need the latest version of the SimConnect.dll, you can find it in the MSFS2020 SDK within the following directory:\
+If you want/need the latest version of the SimConnect.dll, install the MSFS2020 SDK. Please consult the [Flight Simulator Forums](https://forums.flightsimulator.com/t/how-to-getting-started-with-the-sdk-dev-mode/123241) for further instructions if you want to know how to download and install the SDK.
+
+By default, the DLL will be located within the directory:\
 /MSFS SDK/Samples/SimvarWatcher/bin/x64/Release/
-
-Or whatever installation path you chose for the SDK.
-
-Please consult the [Flight Simulator Forums](https://forums.flightsimulator.com/t/how-to-getting-started-with-the-sdk-dev-mode/123241) for further instructions if you want to know how to download and install the SDK.
 
 ## My virus scanner thinks my Go distribution or compiled binary is infected. What the heck?!
 
@@ -201,7 +199,7 @@ In any case, if you believe the report is in error, please report a bug to the s
 
 ## Are there any bugs I should be aware of?
 
-Well. Every program has bugs and I'm pretty sure this one does too. Bugs are annoying and I will fix them as soon as they come up. Report bugs [here](https://github.com/grumpypixel/msfs2020-gopilot/issues).
+Well. Every program has bugs and I'm pretty sure this one does too. Bugs are annoying and they will fixed with best effort. Report bugs [here](https://github.com/grumpypixel/msfs2020-gopilot/issues).
 
 ## I like this but I would like it even more if...
 
@@ -209,11 +207,11 @@ Nice. [Tell](https://github.com/grumpypixel/msfs2020-gopilot/issues) me about it
 
 ## This is all bullcrap! I absolutely dislike it!
 
-Same as above. Open up an [issue](https://github.com/grumpypixel/msfs2020-gopilot/issues) and let me know about your feels. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from your creation.
+Same as above. Open a new [issue](https://github.com/grumpypixel/msfs2020-gopilot/issues) and let me know about your feels. Or, alternatively, clone this repo, improve on it and build something fresh and astonishing. This way we can all learn from your creation.
 
 ## Help! Please!
 
-In case you are experiencing any sort of technical issues with the program or if you have awe-inspiring ideas for incredible improvements, please open up an [issue](https://github.com/grumpypixel/msfs2020-gopilot/issues). (Just so you know, any reported bug sighting will be denied as fake news. There are no bugs. There never were, there never will be. Next.)
+In case you are experiencing any sort of technical issues with the program or if you have awe-inspiring ideas for incredible improvements, please open an [issue](https://github.com/grumpypixel/msfs2020-gopilot/issues).
 
 ## Motivation
 
@@ -222,7 +220,7 @@ There are some really fine VFR maps already available on GitHub like [this](http
 - I was always missing something when using other VFR maps. Of course, I could've just cloned another project and build "my stuff" on top of that but then I probably wouldn't have learned much, which brings me to:
 - I wanted to delve into Golang more intensively.
 - I had the perfect excuse to start up the simulator and shout "CLEAR PROP!" out of the window because I needed to test and evaluate newly implemented features.
-- And last but not least and most importantly: Fun-coding. "Go will make you love programming again", they said. "We [friggin'] promise", they said. And yes, they were right and kept their promise. Visit [@golang](https://twitter.com/golang)
+- And last but not least and most importantly: Fun-coding. ["Go will make you love programming again"](https://twitter.com/golang), they said. "We [friggin'] promise", they said. And yes, they were right and kept their promise.
 
 ## OurAirports Database
 
@@ -237,10 +235,9 @@ Do you agree with the above conditions? If so, then download away!"
 
 ## Shoutouts
 
-A big thank you goes out to Microsoft and especially to all the peeps at [Asobo](https://www.asobostudio.com) for creating such an awesome simulator/program/game/dillydaller.
+A big thank-you goes out to Microsoft and especially to all the peeps at [Asobo](https://www.asobostudio.com) for creating such an awesome simulator/program/game/dillydaller.
 
-Big, hearty thank yous go out to [Pilot Emilie](https://www.youtube.com/c/Pilotemilie/about) and [Squirrel](https://www.youtube.com/squirrel/about) for their fun and educational videos.
-And thanks to the whole, supporting Potato Gang.
+Big, hearty thank-yous go out to [Pilot Emilie](https://www.youtube.com/c/Pilotemilie/about) and [Squirrel](https://www.youtube.com/squirrel/about) for their fun and educational videos. And thanks to the whole, supporting Potato Gang.
 
 Big thanks go out to [David Megginson](http://ourairports.com/about.html#credits) and all contributors of OurAirports.com. What an impressive piece of collected awesomeness!
 
