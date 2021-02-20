@@ -74,18 +74,6 @@ const (
 	AirportTypeRunways  = AirportTypeSmall | AirportTypeMedium | AirportTypeLarge
 )
 
-func KilometersToMeters(km float64) float64 {
-	return km * 1000.0
-}
-
-func MilestoMeters(mi float64) float64 {
-	return mi * 1609.0
-}
-
-func NauticalMilesToMeters(nm float64) float64 {
-	return nm * 1852.0
-}
-
 func (db *Database) ParseAirports(filename string, airportTypeFilter int, skipFirstLine bool) error {
 	f, err := os.Open(filename)
 	if err != nil {

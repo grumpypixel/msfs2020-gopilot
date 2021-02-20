@@ -10,5 +10,5 @@ echo building %EXEC%
 set CGO_ENABLED=1
 set GOOS=windows
 set GOARCH=amd64
-go build -o %EXEC% gopilot/main.go gopilot/request_manager.go gopilot/assetspack.go gopilot/datapack.go gopilot/dllpack.go
+go build -o %EXEC% gopilot/main.go gopilot/request_manager.go gopilot/dllpack.go
 echo done.

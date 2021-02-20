@@ -1,6 +1,6 @@
 module app
 
-go 1.15
+go 1.16
 
 require (
 	github.com/buger/jsonparser v1.1.1

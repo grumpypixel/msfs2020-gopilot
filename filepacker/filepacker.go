@@ -29,7 +29,6 @@ const (
 
 // https://gist.github.com/alex-ant/aeaaf497055590dacba760af24839b8d
 func Pack(infile, outfile, templateFile, packageName, funcName string) error {
-	// fmt.Println(" Reading...")
 	data, err := readData(infile)
 	if err != nil {
 		return err
@@ -37,20 +36,17 @@ func Pack(infile, outfile, templateFile, packageName, funcName string) error {
 
 	size := fmt.Sprintf("%d", len(data))
 
-	// fmt.Println(" Checksumming...")
 	chksum, err := checksum(data)
 	if err != nil {
 		return err
 	}
 
-	// fmt.Println(" Compressing...")
 	compressionLevel := gzip.BestCompression
 	compressedData, err := compress(data, compressionLevel)
 	if err != nil {
 		return err
 	}
 
-	// fmt.Println(" Hexifying...")
 	hexifiedData := bytesToHexString(compressedData)
 
 	templateBytes, err := ioutil.ReadFile(templateFile)
@@ -72,13 +68,11 @@ func Pack(infile, outfile, templateFile, packageName, funcName string) error {
 		Data:     hexifiedData,
 	}
 
-	// fmt.Println(" Templating...")
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, content); err != nil {
 		return err
 	}
 
-	// fmt.Println(" Writing...")
 	if err := writeData(outfile, buf.String()); err != nil {
 		return err
 	}
@@ -147,10 +141,6 @@ func checksum(data []byte) (string, error) {
 
 func bytesToHexString(data []byte) string {
 	var sb strings.Builder
-	// count := len(data) + len(prefix)*len(data)
-	// sb.Grow(count)
-	// fmt.Println("Count", count)
-
 	var value []byte = make([]byte, 1, 1)
 	for _, b := range data {
 		value[0] = b

@@ -71,7 +71,9 @@ func main() {
 	params := &Parameters{}
 	parseParameters(params)
 	dumpParameters(params)
-	checkInstallation(params.searchPath)
+	if err := checkInstallation(params.searchPath); err != nil {
+		panic(err)
+	}
 
 	app := NewApp()
 	app.run(params)
@@ -97,7 +99,7 @@ func dumpParameters(params *Parameters) {
 	fmt.Printf(" Timeout: %ds\n\n", params.timeout)
 }
 
-func checkInstallation(dllSearchPath string) {
+func checkInstallation(dllSearchPath string) error {
 	// Check DLL
 	if simconnect.LocateLibrary(dllSearchPath) == false {
 		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
@@ -109,40 +111,13 @@ func checkInstallation(dllSearchPath string) {
 	}
 	// Check assets directory
 	if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
-		fmt.Println("Assets not found...")
-		tarball := "assets.tar"
-		fullpath := path.Join("", tarball)
-		data := PackedAssets()
-		if err := unpack(data, fullpath); err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err := filepacker.Untar(tarball, ""); err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err := os.Remove(fullpath); err != nil {
-			fmt.Println(err)
-		}
+		return err
 	}
 	// Check data directory
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		fmt.Println("Data not found...")
-		tarball := "data.tar"
-		fullpath := path.Join("", tarball)
-		data := PackedData()
-		if err := unpack(data, fullpath); err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err := filepacker.Untar(tarball, ""); err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err := os.Remove(fullpath); err != nil {
-			fmt.Println(err)
-		}
+		return err
 	}
+	return nil
 }
 
 func unpack(data []byte, fullpath string) error {
