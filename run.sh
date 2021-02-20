@@ -6,7 +6,14 @@ if [ ! -f "$EXEC" ]; then
   ./build.sh
 fi
 
-#rm SimConnect.dll
+if [ "$1" = "clean" ]; then
+  echo "Cleaning..."
+  DLL=./SimConnect.dll
+  if [ -f "$DLL" ]; then
+    rm $DLL
+  fi
+fi
 
 echo "Starting..."
+# ./$EXEC --name COCO --searchpath "." --address 0.0.0.0:8888 --requestinterval 250 --timeout 600  --verbose "true"
 ./$EXEC

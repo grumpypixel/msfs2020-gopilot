@@ -48,14 +48,17 @@ You can run GoPilot with the following options:
 
 * Connection Name: --name <YOUR_CONNECTION_NAME> (default: "GoPilot")
 * DLL Search Path: --searchpath <PATH_TO_SIMCONNECT_DLL> (default: ".")
-* Server Address: --address \<ADDR:PORT> (default: "0.0.0.0:8888")
+* Server Address: --address \<ADDRESS:PORT> (default: "0.0.0.0:8888")
 * Request Interval: --requestinterval <INTERVAL_IN_MILLISECONDS> (default: 250)
 * Timeout: --timeout <TIMEOUT_IN_SECONDS> (default: 600)
+* Verbosity: --verbose <BOOLEAN_VALUE> (default: false)
 
 Example:
 ```console
 $ gopilot.exe --name POTATOSQUAD --searchpath ../.. --address 0.0.0.13370 --requestinterval 200 --timeout 1000
 ```
+
+Note: GoPilot already is pretty verbose. A false verbosity flag just hides a bunch of additional debug messages.
 
 ## Web Server API
 

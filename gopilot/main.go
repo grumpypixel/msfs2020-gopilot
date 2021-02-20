@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,6 +21,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/grumpypixel/msfs2020-simconnect-go/simconnect"
+	"github.com/mattn/go-colorable"
+	log "github.com/sirupsen/logrus"
 )
 
 type Parameters struct {
@@ -28,6 +31,7 @@ type Parameters struct {
 	serverAddress   string
 	requestInterval int64
 	timeout         int64
+	verbose         bool
 }
 
 type Message struct {
@@ -39,8 +43,8 @@ type Message struct {
 
 const (
 	appTitle                   = "MSFS2020-GoPilot"
-	assetsDir                  = "./assets/"
-	dataDir                    = "./data/"
+	assetsDir                  = "assets/"
+	dataDir                    = "data/"
 	contentTypeHTML            = "text/html"
 	contentTypeText            = "text/plain; charset=utf-8"
 	defaultServerAddress       = "0.0.0.0:8888"
@@ -62,17 +66,27 @@ type App struct {
 	socket           *websockets.WebSocket
 	mate             *simconnect.SimMate
 	airportsDB       *aeroports.Database
-	flightSimVersion string
 	done             chan interface{}
+	flightSimVersion string
+	verbose          bool
+}
+
+func init() {
+	log.SetFormatter(&log.TextFormatter{
+		ForceColors: true,
+		// DisableColors: false,
+		// FullTimestamp: false,
+	})
+	log.SetOutput(colorable.NewColorableStdout())
 }
 
 func main() {
-	fmt.Printf("\nWelcome to %s\nProject page: %s\nReleases: %s\n\n", appTitle, projectURL, releasesURL)
+	fmt.Printf("\nWelcome to %s\nVisit: %s\nReleases: %s\n\n", appTitle, projectURL, releasesURL)
 	params := &Parameters{}
 	parseParameters(params)
 	dumpParameters(params)
 	if err := checkInstallation(params.searchPath); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	app := NewApp()
@@ -87,7 +101,15 @@ func parseParameters(params *Parameters) {
 	flag.StringVar(&params.serverAddress, "address", defaultServerAddress, "Web server address (<ipaddr>:<port>)")
 	flag.Int64Var(&params.requestInterval, "requestinterval", requestDataInterval, "Request data interval in milliseconds")
 	flag.Int64Var(&params.timeout, "timeout", connectionTimeout, "Timeout in seconds")
+	// boolean params expect an equal sign (=) between the variable name and the value, i.e. verbose=true. meh.
+	// see also: https://stackoverflow.com/questions/27411691/how-to-pass-boolean-arguments-to-go-flags/27411724
+	// flag.BoolVar(&params.verbose, "verbose", false, "Verbosity")
+	// so out of pure convenience we'll use strings here
+	verbose := flag.String("verbose", "false", "Verbosity")
 	flag.Parse()
+
+	*verbose = strings.ToLower(*verbose)
+	params.verbose = *verbose == "1" || *verbose == "true"
 }
 
 func dumpParameters(params *Parameters) {
@@ -96,7 +118,8 @@ func dumpParameters(params *Parameters) {
 	fmt.Println(" Additional DLL search path:", params.searchPath)
 	fmt.Println(" Web server address:", params.serverAddress)
 	fmt.Printf(" RequestInterval: %ds\n", params.requestInterval)
-	fmt.Printf(" Timeout: %ds\n\n", params.timeout)
+	fmt.Printf(" Timeout: %ds\n", params.timeout)
+	fmt.Printf(" Verbosity: %v\n\n", params.verbose)
 }
 
 func checkInstallation(dllSearchPath string) error {
@@ -106,7 +129,7 @@ func checkInstallation(dllSearchPath string) error {
 		fmt.Println("DLL not found...")
 		data := PackedSimConnectDLL()
 		if err := unpack(data, fullpath); err != nil {
-			fmt.Println("Unable to unpack DLL:", err)
+			log.Error("Unable to unpack DLL:", err)
 		}
 	}
 	// Check assets directory
@@ -152,19 +175,21 @@ func connectionName() string {
 }
 
 func NewApp() *App {
-	db := aeroports.NewDatabase()
-	if err := db.ParseAirports("data/ourairports/airports.csv", aeroports.AirportTypeAll, true); err != nil {
-		fmt.Println(err)
-		db = nil
-	}
 	return &App{
 		requestManager: NewRequestManager(),
 		done:           make(chan interface{}, 1),
-		airportsDB:     db,
+		airportsDB:     aeroports.NewDatabase(),
 	}
 }
 
 func (app *App) run(params *Parameters) {
+	app.verbose = params.verbose
+
+	if err := app.airportsDB.ParseAirports(dataDir+"ourairports/airports.csv", aeroports.AirportTypeAll, true); err != nil {
+		log.Error(err)
+		app.airportsDB = nil
+	}
+
 	app.socket = websockets.NewWebSocket()
 	go app.handleSocketMessages()
 
@@ -173,7 +198,7 @@ func (app *App) run(params *Parameters) {
 	app.initWebServer(params.serverAddress, serverShutdown)
 
 	if err := simconnect.Initialize(params.searchPath); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	app.mate = simconnect.NewSimMate()
@@ -185,7 +210,7 @@ func (app *App) run(params *Parameters) {
 	retryInterval := time.Second * connectRetryInterval
 	timeout := time.Second * time.Duration(params.timeout)
 	if err := app.connect(params.connectionName, retryInterval, timeout); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 
@@ -207,7 +232,7 @@ func (app *App) run(params *Parameters) {
 	stopEventHandler <- true
 
 	if err := app.disconnect(); err != nil {
-		panic(err)
+		log.Error(err)
 	}
 	serverShutdown <- true
 }
@@ -216,25 +241,49 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 	htmlHeaders := app.Headers(contentTypeHTML)
 	textHeaders := app.Headers(contentTypeText)
 	webServer := webserver.NewWebServer(address, shutdown)
+	htmlDir := "assets/html"
 	routes := []webserver.Route{
-		{Pattern: "/", Handler: app.StaticContentHandler(htmlHeaders, "/", filepath.Join("assets/html", "vfrmap.html"))},
-		{Pattern: "/vfrmap", Handler: app.StaticContentHandler(htmlHeaders, "/vfrmap", filepath.Join("assets/html", "vfrmap.html"))},
-		{Pattern: "/mehmap", Handler: app.StaticContentHandler(htmlHeaders, "/mehmap", filepath.Join("assets/html", "mehmap.html"))},
-		{Pattern: "/setdata", Handler: app.StaticContentHandler(htmlHeaders, "/setdata", filepath.Join("assets/html", "setdata.html"))},
-		{Pattern: "/airports", Handler: app.StaticContentHandler(htmlHeaders, "/airports", filepath.Join("assets/html", "airports.html"))},
-		{Pattern: "/teleport", Handler: app.StaticContentHandler(htmlHeaders, "/teleport", filepath.Join("assets/html", "teleporter.html"))},
+		{Pattern: "/", Handler: app.StaticContentHandler(htmlHeaders, "/", filepath.Join(htmlDir, "vfrmap.html"))},
+		{Pattern: "/vfrmap", Handler: app.StaticContentHandler(htmlHeaders, "/vfrmap", filepath.Join(htmlDir, "vfrmap.html"))},
+		{Pattern: "/mehmap", Handler: app.StaticContentHandler(htmlHeaders, "/mehmap", filepath.Join(htmlDir, "mehmap.html"))},
+		{Pattern: "/setdata", Handler: app.StaticContentHandler(htmlHeaders, "/setdata", filepath.Join(htmlDir, "setdata.html"))},
+		{Pattern: "/airports", Handler: app.StaticContentHandler(htmlHeaders, "/airports", filepath.Join(htmlDir, "airports.html"))},
+		{Pattern: "/teleport", Handler: app.StaticContentHandler(htmlHeaders, "/teleport", filepath.Join(htmlDir, "teleporter.html"))},
 		{Pattern: "/debug", Handler: app.GeneratedContentHandler(textHeaders, "/debug", app.DebugGenerator)},
 		{Pattern: "/simvars", Handler: app.GeneratedContentHandler(textHeaders, "/simvars", app.SimvarsGenerator)},
 		{Pattern: "/ws", Handler: app.socket.Serve},
 	}
+
 	fmt.Println("Starting web server")
-	assetsDir := "/assets/"
-	webServer.Run(routes, assetsDir)
+	staticAssetsDir := "/assets/"
+	webServer.Run(routes, staticAssetsDir)
 
 	fmt.Printf("Web Server listening on %s\n\n", address)
+	app.listNetworkInterfaces()
+}
+
+// https://golang-examples.tumblr.com/post/99458329439/get-local-ip-addresses
+func (app *App) listNetworkInterfaces() {
+	list, err := net.Interfaces()
+	if err != nil {
+		return
+	}
 	fmt.Println("Your network interfaces:")
-	webServer.ListNetworkInterfaces()
-	fmt.Println("")
+	for i, iface := range list {
+		str := fmt.Sprintf(" %d %s: ", i+1, iface.Name)
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for j, addr := range addrs {
+			str += fmt.Sprintf("%v", addr)
+			if j < len(addrs) {
+				str += ", "
+			}
+		}
+		fmt.Println(str)
+	}
+	fmt.Printf("\n")
 }
 
 func (app *App) connect(name string, retryInterval, timeout time.Duration) error {
@@ -281,7 +330,7 @@ func (app *App) handleTerminationSignal() {
 	for {
 		select {
 		case <-sigterm:
-			fmt.Println("Received SIGTERM")
+			app.println("Received SIGTERM")
 			app.done <- true
 			return
 		}
@@ -305,7 +354,8 @@ func (app *App) handleSocketMessages() {
 			case websockets.SocketEventMessage:
 				msg := &Message{}
 				json.Unmarshal(event.Data, msg)
-				fmt.Println("Message", connID, msg)
+				app.println("Message", connID, msg)
+
 				switch msg.Type {
 				case "airports":
 					app.handleAirportsMessage(msg, connID)
@@ -337,11 +387,6 @@ func (app *App) handleSocketMessages() {
 }
 
 func (app *App) handleAirportsMessage(msg *Message, connID string) {
-	if app.airportsDB == nil {
-		fmt.Println("Airports database not available")
-		return
-	}
-
 	latitude, ok := floatFromJson("latitude", msg.Data)
 	if !ok {
 		return
@@ -371,8 +416,12 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 	}
 
 	go func() {
-		airports := app.airportsDB.FindNearestAirports(latitude, longitude, radius, maxAirports, airportFilter)
+		if app.airportsDB == nil {
+			fmt.Println("Airports database not available")
+			return
+		}
 
+		airports := app.airportsDB.FindNearestAirports(latitude, longitude, radius, maxAirports, airportFilter)
 		airportList := make([]map[string]interface{}, 0)
 		for _, airport := range airports {
 			ap := make(map[string]interface{})
@@ -432,7 +481,7 @@ func (app *App) handleRegisterMessage(msg *Message, raw []byte, connID string) {
 		request.Add(defineID, name, moniker)
 	}, "data")
 	app.requestManager.AddRequest(request)
-	fmt.Println("Added request", request)
+	app.println("Added request", request)
 }
 
 func (app *App) handleSetDataMessage(msg *Message) {
@@ -694,6 +743,20 @@ func (app *App) DumpedSimVars() string {
 	dump := app.mate.SimVarDump(indent)
 	str := strings.Join(dump[:], "\n")
 	return fmt.Sprintf("SimVars: %d\n", len(dump)) + str
+}
+
+func (app *App) println(a ...interface{}) (n int, err error) {
+	if app.verbose {
+		return fmt.Println(a...)
+	}
+	return 0, nil
+}
+
+func (app *App) printf(format string, a ...interface{}) (n int, err error) {
+	if app.verbose {
+		return fmt.Printf(format, a...)
+	}
+	return 0, nil
 }
 
 func floatFromJson(key string, json map[string]interface{}) (float64, bool) {
