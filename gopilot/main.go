@@ -53,10 +53,11 @@ const (
 	defaultMaxAirportCount     = 10
 	projectURL                 = "http://github.com/grumpypixel/msfs2020-gopilot"
 	releasesURL                = projectURL + "/releases"
-	connectionTimeout          = 600 // in seconds
-	connectRetryInterval       = 1   // in seconds
-	requestDataInterval        = 250 // in milliseconds
-	receiveDataInterval        = 1   // in milliseconds
+	connectionTimeout          = 600 // seconds
+	connectRetryInterval       = 1   // seconds
+	requestDataInterval        = 250 // milliseconds
+	receiveDataInterval        = 1   // milliseconds
+	shutdownDelay              = 3   // seconds
 	broadcastInterval          = 250
 )
 
@@ -228,13 +229,14 @@ func (app *App) run(params *Parameters) {
 
 	fmt.Println("Shutting down")
 
-	stopBroadcast <- true
 	stopEventHandler <- true
+	stopBroadcast <- true
+	serverShutdown <- true
 
 	if err := app.disconnect(); err != nil {
 		log.Error(err)
 	}
-	serverShutdown <- true
+	time.Sleep(time.Second * shutdownDelay)
 }
 
 func (app *App) initWebServer(address string, shutdown chan bool) {
@@ -324,7 +326,6 @@ func (app *App) disconnect() error {
 func (app *App) handleTerminationSignal() {
 	sigterm := make(chan os.Signal, 1)
 	defer close(sigterm)
-
 	signal.Notify(sigterm, os.Interrupt, syscall.SIGTERM)
 
 	for {
