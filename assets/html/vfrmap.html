@@ -265,7 +265,10 @@ const attributions = {
 };
 
 const baseMapNames = {
-    bing: 'Bing Maps',
+    bingLight: 'BingMaps.Light',
+    bingDark: 'BingMaps.Dark',
+    bingGray: 'BingMaps.Gray',
+    bingAerial: 'BingMaps.Aerial',
     cartoDBDarkMatter: 'CartoDB.DarkMatter',
     cartoDBPositron: 'CartoDB.Positron',
     cartoDBVoyager: 'CartoDB.Voyager',
@@ -635,6 +638,60 @@ function initMap(latitude, longitude) {
         ext: 'png',
     });
 
+    // Get your own key here: https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key
+    // Example: http://localhost:8080/?bing_key=<YOUR_BING_KEY_HERE>
+    // See also: https://github.com/digidem/leaflet-bing-layer
+    let badaBing = null
+    const bingKey = getUrlParam(vars.urlParams, 'bing_key', roxy(getBingMapsKey()));
+    if (bingKey !== null) {
+        badaBing = [
+            {
+                name: baseMapNames.bingLight,
+                layer: new L.tileLayer.bing({
+                    bingMapsKey: bingKey,
+                    imagerySet: 'CanvasLight',
+                    culture: 'en-US',
+                    minZoom: minZoom,
+                    maxZoom: 20,
+                    minNativeZoom: minZoom,
+                })
+            },
+            {
+                name: baseMapNames.bingDark,
+                layer: new L.tileLayer.bing({
+                    bingMapsKey: bingKey,
+                    imagerySet: 'CanvasDark',
+                    culture: 'en-US',
+                    minZoom: minZoom,
+                    maxZoom: 20,
+                    minNativeZoom: minZoom,
+                })
+            },
+            {
+                name: baseMapNames.bingGray,
+                layer: new L.tileLayer.bing({
+                    bingMapsKey: bingKey,
+                    imagerySet: 'CanvasGray',
+                    culture: 'en-US',
+                    minZoom: minZoom,
+                    maxZoom: 20,
+                    minNativeZoom: minZoom,
+                })
+            },
+            {
+                name: baseMapNames.bingAerial,
+                layer: new L.tileLayer.bing({
+                    bingMapsKey: bingKey,
+                    imagerySet: 'AerialWithLabels',
+                    culture: 'en-US',
+                    minZoom: minZoom,
+                    maxZoom: 20,
+                    minNativeZoom: minZoom,
+                })
+            },
+        ];
+    }
+
     // Get your own Mapbox token here: https://account.mapbox.com/
     // Example: http://localhost:8080/?mapbox_token=<YOUR_MAPBOX_TOKEN_HERE>
     let mapbox = null;
@@ -648,22 +705,6 @@ function initMap(latitude, longitude) {
             maxZoom: maxZoom,
             zoomOffset: -1,
             tileSize: 512,
-        });
-    }
-
-    // Get your own key here: https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key
-    // Example: http://localhost:8080/?bing_key=<YOUR_BING_KEY_HERE>
-    // See also: https://github.com/digidem/leaflet-bing-layer
-    let badaBing = null;
-    const bingKey = getUrlParam(vars.urlParams, 'bing_key', roxy(getBingMapsKey()));
-    if (bingKey !== null) {
-        badaBing = new L.tileLayer.bing(        {
-            bingMapsKey: bingKey,
-            imagerySet: 'Aerial',
-            culture: 'en-US',
-            minZoom: minZoom,
-            maxZoom: 20,
-            minNativeZoom: minZoom,
         });
     }
 
@@ -737,11 +778,16 @@ function initMap(latitude, longitude) {
     maps[baseMapNames.cartoDBPositron] = cartoDBPositron;
     maps[baseMapNames.cartoDBDarkMatter] = cartoDBDarkMatter;
     maps[baseMapNames.cartoDBVoyager] = cartoDBVoyager;
+
+    if (badaBing !== null) {
+        for (let i of badaBing) {
+            // maps[baseMapNames.bingAerial] = badaBing[0];
+            maps[i.name] = i.layer
+        }
+    }
+
     if (mapbox !== null) {
         maps[baseMapNames.mapbox] = mapbox;
-    }
-    if (badaBing !== null) {
-        maps[baseMapNames.bing] = badaBing;
     }
 
     osm.addTo(map);
