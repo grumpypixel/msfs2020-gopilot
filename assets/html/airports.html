@@ -356,7 +356,10 @@ function initMap(latitude, longitude) {
         zoomControl: false,
     });
 
-    const attrib = L.control.attribution({position: constants.mapControlPosition});
+    const attrib = L.control.attribution({
+        position: constants.mapControlPosition,
+        prefix: '<a href="https://github.com/grumpypixel/msfs2020-gopilot" target="_blank">GoPilot</a>',
+    });
     attrib.addAttribution('&copy; <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a>');
     attrib.addAttribution('&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>');
     attrib.addTo(map);

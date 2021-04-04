@@ -749,7 +749,10 @@ function initMap(latitude, longitude) {
     });
 
     if (vars.showAttributions === true) {
-        const attrib = L.control.attribution({position: constants.mapControlPosition});
+        const attrib = L.control.attribution({
+            position: constants.mapControlPosition,
+            prefix: '<a href="https://github.com/grumpypixel/msfs2020-gopilot" target="_blank">GoPilot</a>',
+        });
         attrib.addAttribution(attributions.fontawesome);
         attrib.addTo(map);
     }
@@ -757,7 +760,7 @@ function initMap(latitude, longitude) {
     const showScale = getUrlParamAsBool(vars.urlParams, 'scale_control', true);
     if (showScale === true) {
         L.control.scale({
-            position: 'bottomright',
+            position: constants.mapControlPosition,
         }).addTo(map);
     }
 
@@ -781,7 +784,6 @@ function initMap(latitude, longitude) {
 
     if (badaBing !== null) {
         for (let i of badaBing) {
-            // maps[baseMapNames.bingAerial] = badaBing[0];
             maps[i.name] = i.layer
         }
     }
