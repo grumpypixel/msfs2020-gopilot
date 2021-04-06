@@ -114,6 +114,7 @@ List of available options:
 * `marker_event=click|dblclick|contextmenu` - specify the mouse event with which the map marker is placed (default: click)
 * `mapbox_token=<token>` - use your own token for [Mapbox](https://docs.mapbox.com/help/tutorials/get-started-tokens-api/) since the one provided is limited
 * `bing_key=<key>` - use your own key for [Bing Maps](https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key) since the one provided is also limited
+* `bing_culture=<culture-code>` - Set the culture code for Bing Maps (default: en-US). See [Bing Maps Culture Codes](https://docs.microsoft.com/en-us/bingmaps/rest-services/common-parameters-and-types/supported-culture-codes)
 
 Note: Boolean parameters can be entered as *true* or *false*, *1* or *0*, *yes* or *no*, *yay* or *nay*, *yeah* or *nope*.
 
@@ -126,6 +127,15 @@ Or go zen and switch off all overlays:
 ```console
 http://localhost:8888/?hud=0&plane_overlay=0&position_overlay=0&scale_control=0&layer_control=0&zoom_control=0&attributions=0
 ```
+
+Bing Maps example:
+```console
+http://localhost:8888/?bing_culture=zh-Hans # Display Simplified Chinese Maps
+http://localhost:8888/?bing_culture=es-ES # Display Spanish Maps
+http://localhost:8888/?bing_key=<YOUR_BING_KEY>&bing_culture=de-de
+```
+
+Get your own key for Bing Maps [here](https://www.microsoft.com/en-us/maps/create-a-bing-maps-key).
 
 ## VFR Map Keyboard Shortcuts
 
