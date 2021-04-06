@@ -93,6 +93,7 @@ Or a combination of multiple options:\
 
 List of available options:
 
+* `default_map=<map-name>` - set the default map (default: OpenStreetMap)
 * `layer_control=true|false` - show/hide the layer control (default: true)
 * `scale_control=true|false` - show/hide the scale control (default: true)
 * `zoom_control=true|false` - show/hide the zoom control (default: true)
@@ -114,9 +115,11 @@ List of available options:
 * `marker_event=click|dblclick|contextmenu` - specify the mouse event with which the map marker is placed (default: click)
 * `mapbox_token=<token>` - use your own token for [Mapbox](https://docs.mapbox.com/help/tutorials/get-started-tokens-api/) since the one provided is limited
 * `bing_key=<key>` - use your own key for [Bing Maps](https://docs.microsoft.com/en-us/bingmaps/getting-started/bing-maps-dev-center-help/getting-a-bing-maps-key) since the one provided is also limited
-* `bing_culture=<culture-code>` - Set the culture code for Bing Maps (default: en-US). See [Bing Maps Culture Codes](https://docs.microsoft.com/en-us/bingmaps/rest-services/common-parameters-and-types/supported-culture-codes)
+* `bing_culture=<culture-code>` - set the culture code for Bing Maps (default: en-US). See [Bing Maps Culture Codes](https://docs.microsoft.com/en-us/bingmaps/rest-services/common-parameters-and-types/supported-culture-codes)
 
 Note: Boolean parameters can be entered as *true* or *false*, *1* or *0*, *yes* or *no*, *yay* or *nay*, *yeah* or *nope*.
+
+### Examples for VFR Map Options
 
 Random example:
 ```console
@@ -128,14 +131,53 @@ Or go zen and switch off all overlays:
 http://localhost:8888/?hud=0&plane_overlay=0&position_overlay=0&scale_control=0&layer_control=0&zoom_control=0&attributions=0
 ```
 
-Bing Maps example:
+Set a default map:
 ```console
-http://localhost:8888/?bing_culture=zh-Hans # Display Simplified Chinese Maps
-http://localhost:8888/?bing_culture=es-ES # Display Spanish Maps
-http://localhost:8888/?bing_key=<YOUR_BING_KEY>&bing_culture=de-de
+# Show CartoDB Positron per default:
+http://localhost:8888/?default_map=CartoDB.Positron
+# Show Bing Maps Aerial per default:
+http://localhost:8888/?default_map=BingMaps.Aerial
 ```
 
-Get your own key for Bing Maps [here](https://www.microsoft.com/en-us/maps/create-a-bing-maps-key).
+Default map options:
+* BingMaps.Light
+* BingMaps.Dark
+* BingMaps.Gray
+* BingMaps.Aerial
+* CartoDB.DarkMatter
+* CartoDB.Positron
+* CartoDB.Voyager
+* Esri.WorldGrayCanvas
+* Esri.WorldImagery
+* Esri.WorldStreetMap
+* Esri.WorldTopoMap
+* Mapbox
+* OpenStreetMap
+* OpenStreetMap.DE
+* OpenStreetMap.FR
+* OpenStreeMap.Gray
+* OpenStreetMap.HOT
+* OpenTopoMap
+* Stamen.Terrain
+* Stamen.Toner
+* Stamen.TonerLight
+
+Bing Maps examples:
+```console
+# Display simplified Chinese Bing Maps
+http://localhost:8888/?bing_culture=zh-Hans
+
+# Display Spanish Bing Maps
+http://localhost:8888/?bing_culture=es-ES
+
+# Specify your own Bing Maps Key and display German maps
+http://localhost:8888/?bing_key=<YOUR_BING_KEY>&bing_culture=de-de
+
+# Display Bing Maps Light in French
+http://localhost:8888/?default_map=BingMaps.Light&bing_culture=fr-FR
+```
+
+You should probably get your own key for Bing Maps [here](https://www.microsoft.com/en-us/maps/create-a-bing-maps-key).
 
 ## VFR Map Keyboard Shortcuts
 

@@ -282,7 +282,7 @@ const baseMapNames = {
     openStreetMapHOT: 'OpenStreetMap.HOT',
     openStreetMapnik: 'OpenStreetMap',
     openTopoMap: 'OpenTopoMap',
-    osmGrayscale: 'OSM Grayscale',
+    osmGrayscale: 'OpenStreetMap.Gray',
     stamenTerrain: 'Stamen.Terrain',
     stamenToner: 'Stamen.Toner',
     stamenTonerLight: 'Stamen.TonerLight',
@@ -772,6 +772,21 @@ function initMap(latitude, longitude) {
     }
 
     osm.addTo(map);
+
+    const defaultMapKey = 'default_map';
+    if (hasUrlParam(vars.urlParams, defaultMapKey) === true) {
+        const defaultMapName = getUrlParam(vars.urlParams, defaultMapKey, baseMapNames.openStreetMapnik);
+        for (const [key, value] of Object.entries(baseMapNames)) {
+            if (value.toLowerCase() === defaultMapName.toLowerCase()) {
+                const baseMap = maps[value];
+                if (baseMap !== null) {
+                    baseMap.addTo(map);
+                    console.log(`Set default map to ${value}`);
+                    break;
+                }
+            }
+        }
+    }
 
     const showWatermark = getUrlParamAsBool(vars.urlParams, 'watermark', false);
     if (showWatermark === true) {
