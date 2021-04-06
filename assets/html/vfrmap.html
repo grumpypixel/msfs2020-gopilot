@@ -644,50 +644,29 @@ function initMap(latitude, longitude) {
     let badaBing = null
     const bingKey = getUrlParam(vars.urlParams, 'bing_key', roxy(getBingMapsKey()));
     if (bingKey !== null) {
+        const options = {
+            bingMapsKey: bingKey,
+            culture: getUrlParam(vars.urlParams, 'bing_culture', 'en-US'),
+            minZoom: minZoom,
+            maxZoom: 20,
+            minNativeZoom: minZoom,
+        };
         badaBing = [
             {
                 name: baseMapNames.bingLight,
-                layer: new L.tileLayer.bing({
-                    bingMapsKey: bingKey,
-                    imagerySet: 'CanvasLight',
-                    culture: 'en-US',
-                    minZoom: minZoom,
-                    maxZoom: 20,
-                    minNativeZoom: minZoom,
-                })
+                layer: new L.tileLayer.bing(Object.assign(options, {imagerySet: 'CanvasLight'})),
             },
             {
                 name: baseMapNames.bingDark,
-                layer: new L.tileLayer.bing({
-                    bingMapsKey: bingKey,
-                    imagerySet: 'CanvasDark',
-                    culture: 'en-US',
-                    minZoom: minZoom,
-                    maxZoom: 20,
-                    minNativeZoom: minZoom,
-                })
+                layer: new L.tileLayer.bing(Object.assign(options, {imagerySet: 'CanvasDark'})),
             },
             {
                 name: baseMapNames.bingGray,
-                layer: new L.tileLayer.bing({
-                    bingMapsKey: bingKey,
-                    imagerySet: 'CanvasGray',
-                    culture: 'en-US',
-                    minZoom: minZoom,
-                    maxZoom: 20,
-                    minNativeZoom: minZoom,
-                })
+                layer: new L.tileLayer.bing(Object.assign(options, {imagerySet: 'CanvasGray'})),
             },
             {
                 name: baseMapNames.bingAerial,
-                layer: new L.tileLayer.bing({
-                    bingMapsKey: bingKey,
-                    imagerySet: 'AerialWithLabels',
-                    culture: 'en-US',
-                    minZoom: minZoom,
-                    maxZoom: 20,
-                    minNativeZoom: minZoom,
-                })
+                layer: new L.tileLayer.bing(Object.assign(options, {imagerySet: 'AerialWithLabels'})),
             },
         ];
     }

@@ -160,7 +160,9 @@
         if (typeof this.options.style === 'string') {
           url += '&st=' + this.options.style
         }
-        return url
+        // https://github.com/digidem/leaflet-bing-layer/issues/49
+        return url.replace(/en\-US/, this.options.culture)
+        // return url
       },
 
       // Update the attribution control every time the map is moved
