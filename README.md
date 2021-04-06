@@ -135,6 +135,7 @@ Set a default map:
 ```console
 # Show CartoDB Positron per default:
 http://localhost:8888/?default_map=CartoDB.Positron
+
 # Show Bing Maps Aerial per default:
 http://localhost:8888/?default_map=BingMaps.Aerial
 ```
@@ -173,7 +174,7 @@ http://localhost:8888/?bing_culture=es-ES
 # Specify your own Bing Maps Key and display German maps
 http://localhost:8888/?bing_key=<YOUR_BING_KEY>&bing_culture=de-de
 
-# Display Bing Maps Light in French
+# Bing-Maps-Light/French Combo
 http://localhost:8888/?default_map=BingMaps.Light&bing_culture=fr-FR
 ```
 
