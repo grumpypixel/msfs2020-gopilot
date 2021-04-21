@@ -59,7 +59,7 @@ func (socket *WebSocket) ConnectionCount() int {
 
 func (socket *WebSocket) ConnectionUUIDs() []string {
 	uuids := make([]string, 0)
-	for key, _ := range socket.connections {
+	for key := range socket.connections {
 		uuids = append(uuids, key.UUID())
 	}
 	return uuids

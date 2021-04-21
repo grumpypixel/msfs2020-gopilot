@@ -3,7 +3,6 @@ package websockets
 
 import (
 	"bytes"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -89,10 +88,11 @@ func (connection *Connection) receiver() {
 		for {
 			_, data, err := connection.wsconn.ReadMessage()
 			if err != nil {
-				fmt.Println("Connection read error:", err)
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-					fmt.Println("Connection encountered an unexpected close error.") // These are the worst. Ugh.
-				}
+				// fmt.Println("Connection read error:", err)
+				// if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				// 	// These are the worst. Ugh.
+				// 	fmt.Println("Connection encountered an unexpected close error.")
+				// }
 				break
 			} else {
 				data = bytes.TrimSpace(bytes.Replace(data, newline, space, -1))
@@ -123,7 +123,6 @@ func (connection *Connection) sender() {
 
 			case message, ok := <-connection.messageSender:
 				if !ok {
-					fmt.Println("Connection send error:", message)
 					return
 				}
 				buf.Write(message)
@@ -140,7 +139,6 @@ func (connection *Connection) sender() {
 			case <-ping.C:
 				connection.wsconn.SetWriteDeadline(time.Now().Add(writeDelay))
 				if err := connection.wsconn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-					fmt.Println("Connection write error:", err)
 					return
 				}
 
@@ -156,7 +154,6 @@ func (connection *Connection) sender() {
 				}
 				w.Write(message)
 				if err := w.Close(); err != nil {
-					fmt.Println("Connection write error:", err)
 					return
 				}
 			}

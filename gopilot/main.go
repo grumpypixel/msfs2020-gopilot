@@ -62,7 +62,6 @@ const (
 )
 
 type App struct {
-	simconnect.EventListener
 	requestManager   *RequestManager
 	socket           *websockets.WebSocket
 	mate             *simconnect.SimMate
@@ -70,6 +69,7 @@ type App struct {
 	done             chan interface{}
 	flightSimVersion string
 	verbose          bool
+	eventListener    *simconnect.EventListener
 }
 
 func init() {
@@ -125,7 +125,7 @@ func dumpParameters(params *Parameters) {
 
 func checkInstallation(dllSearchPath string) error {
 	// Check DLL
-	if simconnect.LocateLibrary(dllSearchPath) == false {
+	if !simconnect.LocateLibrary(dllSearchPath) {
 		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
 		fmt.Println("DLL not found...")
 		data := PackedSimConnectDLL()
@@ -186,6 +186,8 @@ func NewApp() *App {
 func (app *App) run(params *Parameters) {
 	app.verbose = params.verbose
 
+	app.addEventListeners()
+
 	if err := app.airportsDB.ParseAirports(dataDir+"ourairports/airports.csv", aeroports.AirportTypeAll, true); err != nil {
 		log.Error(err)
 		app.airportsDB = nil
@@ -222,7 +224,7 @@ func (app *App) run(params *Parameters) {
 
 	requestInterval := time.Millisecond * time.Duration(params.requestInterval)
 	receiveInterval := time.Millisecond * receiveDataInterval
-	go app.mate.HandleEvents(requestInterval, receiveInterval, stopEventHandler, app)
+	go app.mate.HandleEvents(requestInterval, receiveInterval, stopEventHandler, app.eventListener)
 
 	<-app.done
 	defer close(app.done)
@@ -237,6 +239,16 @@ func (app *App) run(params *Parameters) {
 		log.Error(err)
 	}
 	time.Sleep(time.Second * shutdownDelay)
+}
+
+func (app *App) addEventListeners() {
+	app.eventListener = &simconnect.EventListener{
+		OnOpen:      app.OnOpen,
+		OnQuit:      app.OnQuit,
+		OnDataReady: app.OnDataReady,
+		OnEventID:   app.OnEventID,
+		OnException: app.OnException,
+	}
 }
 
 func (app *App) initWebServer(address string, shutdown chan bool) {
@@ -310,7 +322,7 @@ func (app *App) connect(name string, retryInterval, timeout time.Duration) error
 			}
 
 		case <-timeoutTimer.C:
-			return fmt.Errorf("Opening a connection to the simulator timed out")
+			return fmt.Errorf("opening a connection to the simulator timed out")
 		}
 	}
 }
@@ -479,6 +491,7 @@ func (app *App) handleRegisterMessage(msg *Message, raw []byte, connID string) {
 		typ := simconnect.StringToDataType(string(t))
 		moniker := string(m)
 		defineID := app.mate.AddSimVar(name, unit, typ)
+		app.println("Added SimVar", defineID, name, unit, typ)
 		request.Add(defineID, name, moniker)
 	}, "data")
 	app.requestManager.AddRequest(request)
@@ -487,7 +500,7 @@ func (app *App) handleRegisterMessage(msg *Message, raw []byte, connID string) {
 
 func (app *App) handleSetDataMessage(msg *Message) {
 	if !app.mate.IsConnected() {
-		fmt.Println("Not connected to SimConnect. Ignoring setdata message.")
+		fmt.Println("Not connected to SimConnect. Ignoring SetDataMessage.")
 		return
 	}
 	name, ok := stringFromJson("name", msg.Data)
@@ -509,7 +522,7 @@ func (app *App) handleSetDataMessage(msg *Message) {
 
 func (app *App) handleTeleportMessage(msg *Message) {
 	if !app.mate.IsConnected() {
-		fmt.Println("Not connected to SimConnect. Ignoring teleport message.")
+		fmt.Println("Not connected to SimConnect. Ignoring TeleportMessage.")
 		return
 	}
 	latitude, ok := floatFromJson("latitude", msg.Data)
@@ -564,6 +577,7 @@ func (app *App) removeRequests(connID string) {
 			count := app.requestManager.RefCount(v.Name)
 			if count == 0 {
 				app.mate.RemoveSimVar(defineID)
+				app.println("Removed SimVar", defineID)
 			}
 		}
 	}
@@ -591,9 +605,13 @@ func (app *App) OnException(exceptionCode simconnect.DWord) {
 	fmt.Printf("Exception (code: %d)\n", exceptionCode)
 }
 
-func (app *App) OnDataUpdate(defineID simconnect.DWord, value interface{}) {
-	// pass
-}
+// func (app *App) OnSimObjectData(data *simconnect.RecvSimObjectData) {
+// 	// pass
+// }
+
+// func (app *App) OnSimObjectDataByType(data *simconnect.RecvSimObjectDataByType) {
+// 	// pass
+// }
 
 func (app *App) OnDataReady() {
 	for _, request := range app.requestManager.Requests {
@@ -730,10 +748,8 @@ func (app *App) DumpedRequests() string {
 	dump += fmt.Sprintf("Requests: %d\n", app.requestManager.RequestCount())
 	for i, request := range app.requestManager.Requests {
 		dump += fmt.Sprintf("  %02d: Client: %s Vars: %d Meta: %s\n", i+1, request.ClientID, len(request.Vars), request.Meta)
-		count := 1
-		for name, moniker := range request.Vars {
-			dump += fmt.Sprintf("    %02d: name: %s moniker: %s\n", count, name, moniker)
-			count++
+		for j, simVar := range request.Vars {
+			dump += fmt.Sprintf("    %02d: name: %s moniker: %s\n", j, simVar.Name, simVar.Moniker)
 		}
 	}
 	return dump
@@ -749,13 +765,6 @@ func (app *App) DumpedSimVars() string {
 func (app *App) println(a ...interface{}) (n int, err error) {
 	if app.verbose {
 		return fmt.Println(a...)
-	}
-	return 0, nil
-}
-
-func (app *App) printf(format string, a ...interface{}) (n int, err error) {
-	if app.verbose {
-		return fmt.Printf(format, a...)
 	}
 	return 0, nil
 }
@@ -783,24 +792,3 @@ func stringFromJson(key string, json map[string]interface{}) (string, bool) {
 	}
 	return value.(string), true
 }
-
-// func (app *App) handleSetCameraMessage(msg *Message) {
-// 	fmt.Println("SetCameraMessage", *msg)
-// 	deltaX := msg.Data["delta_x"].(float64)
-// 	deltaY := msg.Data["delta_y"].(float64)
-// 	deltaZ := msg.Data["delta_z"].(float64)
-// 	pitch := msg.Data["pitch"].(float64)
-// 	bank := msg.Data["bank"].(float64)
-// 	heading := msg.Data["heading"].(float64)
-// 	app.mate.CameraSetRelative6DOF(deltaX, deltaY, deltaZ, pitch, bank, heading)
-// }
-
-// func (app *App) handleSetTextMessage(msg *Message) {
-// 	fmt.Println("SetTextMessage", *msg)
-// 	// IMPLEMENT ME
-// 	text := "HELLO, SIMWORLD!"
-// 	textType := simconnect.TextTypePrintMagenta
-// 	duration := 10.0
-// 	eventID := simconnect.NextEventID()
-// 	app.mate.Text(text, textType, duration, eventID)
-// }
