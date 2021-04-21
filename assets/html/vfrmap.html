@@ -249,10 +249,7 @@ const vars = {
 
 const attributions = {
     cartoDB: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    esriWorldGrayCanvas: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-    esriWorldImagery: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    esriWorldStreetMap: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
-    esriWorldTopoMap: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
+    esri: '&copy; <a href="https://esri.maps.arcgis.com/home/index.html">Esri</a>',
     fontawesome: '&copy; <a href="https://fontawesome.com/license" target="_blank">FontAwesome</a>',
     mapbox: '&copy; <a href="https://www.mapbox.com/about/maps/" target="_blank">Mapbox</a>',
     openAIP: '&copy; <a href="https://www.openaip.net/">openAIP Data</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
@@ -570,22 +567,22 @@ function initMap(latitude, longitude) {
         tileSize: tileSize,
     });
     const esriWorldStreetMap = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    	attribution: attributions.esriWorldStreetMap,
+    	attribution: attributions.esri,
         minZoom: minZoom,
         maxZoom: maxZoom,
     });
     const esriWorldTopoMap = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    	attribution: attributions.esriWorldTopoMap,
+    	attribution: attributions.esri,
         minZoom: minZoom,
         maxZoom: maxZoom,
     });
     const esriWorldImagery = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    	attribution: attributions.esriWorldImagery,
+    	attribution: attributions.esri,
         minZoom: minZoom,
         maxZoom: 20,
     });
     const esriWorldGrayCanvas = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        attribution: attributions.esriWorldGrayCanvas,
+        attribution: attributions.esri,
         minZoom: minZoom,
         maxZoom: 16,
     });
