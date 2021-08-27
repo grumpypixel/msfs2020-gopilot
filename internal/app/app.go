@@ -1,19 +1,16 @@
-package main
+package app
 
 import (
-	"app/aeroports"
-	"app/filepacker"
-	"app/webserver"
-	"app/websockets"
 	"encoding/json"
-	"flag"
 	"fmt"
-	"math/rand"
+	"msfs2020-gopilot/internal/aeroports"
+	"msfs2020-gopilot/internal/config"
+	"msfs2020-gopilot/internal/webserver"
+	"msfs2020-gopilot/internal/websockets"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -21,18 +18,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/grumpypixel/msfs2020-simconnect-go/simconnect"
-	"github.com/mattn/go-colorable"
 	log "github.com/sirupsen/logrus"
 )
-
-type Parameters struct {
-	connectionName  string
-	searchPath      string
-	serverAddress   string
-	requestInterval int64
-	timeout         int64
-	verbose         bool
-}
 
 type Message struct {
 	Type  string                 `json:"type"`
@@ -72,109 +59,6 @@ type App struct {
 	eventListener    *simconnect.EventListener
 }
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{
-		ForceColors: true,
-		// DisableColors: false,
-		// FullTimestamp: false,
-	})
-	log.SetOutput(colorable.NewColorableStdout())
-}
-
-func main() {
-	fmt.Printf("\nWelcome to %s\nVisit: %s\nReleases: %s\n\n", appTitle, projectURL, releasesURL)
-	params := &Parameters{}
-	parseParameters(params)
-	dumpParameters(params)
-	if err := checkInstallation(params.searchPath); err != nil {
-		log.Fatal(err)
-	}
-
-	app := NewApp()
-	app.run(params)
-
-	fmt.Println("Bye")
-}
-
-func parseParameters(params *Parameters) {
-	flag.StringVar(&params.connectionName, "name", connectionName(), "Connection name")
-	flag.StringVar(&params.searchPath, "searchpath", defaultSearchPath, "Additional DLL search path")
-	flag.StringVar(&params.serverAddress, "address", defaultServerAddress, "Web server address (<ipaddr>:<port>)")
-	flag.Int64Var(&params.requestInterval, "requestinterval", requestDataInterval, "Request data interval in milliseconds")
-	flag.Int64Var(&params.timeout, "timeout", connectionTimeout, "Timeout in seconds")
-	// boolean params expect an equal sign (=) between the variable name and the value, i.e. verbose=true. meh.
-	// see also: https://stackoverflow.com/questions/27411691/how-to-pass-boolean-arguments-to-go-flags/27411724
-	// flag.BoolVar(&params.verbose, "verbose", false, "Verbosity")
-	// so out of pure convenience we'll use strings here
-	verbose := flag.String("verbose", "false", "Verbosity")
-	flag.Parse()
-
-	*verbose = strings.ToLower(*verbose)
-	params.verbose = *verbose == "1" || *verbose == "true"
-}
-
-func dumpParameters(params *Parameters) {
-	fmt.Println("Application parameters")
-	fmt.Println(" Connection name:", params.connectionName)
-	fmt.Println(" Additional DLL search path:", params.searchPath)
-	fmt.Println(" Web server address:", params.serverAddress)
-	fmt.Printf(" RequestInterval: %ds\n", params.requestInterval)
-	fmt.Printf(" Timeout: %ds\n", params.timeout)
-	fmt.Printf(" Verbosity: %v\n\n", params.verbose)
-}
-
-func checkInstallation(dllSearchPath string) error {
-	// Check DLL
-	if !simconnect.LocateLibrary(dllSearchPath) {
-		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
-		fmt.Println("DLL not found...")
-		data := PackedSimConnectDLL()
-		if err := unpack(data, fullpath); err != nil {
-			log.Error("Unable to unpack DLL:", err)
-		}
-	}
-	// Check assets directory
-	if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
-		return err
-	}
-	// Check data directory
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-func unpack(data []byte, fullpath string) error {
-	fmt.Printf("Unpacking target: %s\n", fullpath)
-	unpacked, err := filepacker.Unpack(data)
-	if err != nil {
-		return err
-	}
-	file, err := os.Create(fullpath)
-	if err != nil {
-		return err
-	}
-	if _, err := file.WriteString(string(unpacked)); err != nil {
-		return err
-	}
-	if err := file.Close(); err != nil {
-		return err
-	}
-	time.Sleep(time.Second * 1)
-	return nil
-}
-
-func connectionName() string {
-	rand.Seed(time.Now().Unix())
-	names := []string{
-		"0xDECAFBAD", "0xBADDCAFE", "0xCAFED00D",
-		"Boobytrap", "Sobeit Void", "Transpotato",
-		"A but Tuba", "Evil Olive", "Flee to Me, Remote Elf",
-		"Sit on a Potato Pan, Otis", "Taco Cat", "UFO Tofu",
-	}
-	return names[rand.Intn(len(names))]
-}
-
 func NewApp() *App {
 	return &App{
 		requestManager: NewRequestManager(),
@@ -183,8 +67,8 @@ func NewApp() *App {
 	}
 }
 
-func (app *App) run(params *Parameters) {
-	app.verbose = params.verbose
+func (app *App) Run(params *config.Parameters) {
+	app.verbose = params.Verbose
 
 	app.addEventListeners()
 
@@ -198,9 +82,9 @@ func (app *App) run(params *Parameters) {
 
 	serverShutdown := make(chan bool, 1)
 	defer close(serverShutdown)
-	app.initWebServer(params.serverAddress, serverShutdown)
+	app.initWebServer(params.ServerAddress, serverShutdown)
 
-	if err := simconnect.Initialize(params.searchPath); err != nil {
+	if err := simconnect.Initialize(params.SearchPath); err != nil {
 		log.Fatal(err)
 	}
 
@@ -211,8 +95,8 @@ func (app *App) run(params *Parameters) {
 	go app.Broadcast(time.Millisecond*broadcastInterval, stopBroadcast)
 
 	retryInterval := time.Second * connectRetryInterval
-	timeout := time.Second * time.Duration(params.timeout)
-	if err := app.connect(params.connectionName, retryInterval, timeout); err != nil {
+	timeout := time.Second * time.Duration(params.Timeout)
+	if err := app.connect(params.ConnectionName, retryInterval, timeout); err != nil {
 		log.Error(err)
 		return
 	}
@@ -222,7 +106,7 @@ func (app *App) run(params *Parameters) {
 	stopEventHandler := make(chan interface{}, 1)
 	defer close(stopEventHandler)
 
-	requestInterval := time.Millisecond * time.Duration(params.requestInterval)
+	requestInterval := time.Millisecond * time.Duration(params.RequestInterval)
 	receiveInterval := time.Millisecond * receiveDataInterval
 	go app.mate.HandleEvents(requestInterval, receiveInterval, stopEventHandler, app.eventListener)
 

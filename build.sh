@@ -29,5 +29,5 @@ if [ "$1" = "release" ]; then
 fi
 
 echo "Building..."
-CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o $EXEC gopilot/main.go gopilot/request_manager.go gopilot/dllpack.go
+CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o $EXEC cmd/main.go
 echo "Done."
