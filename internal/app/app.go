@@ -29,76 +29,71 @@ type Message struct {
 }
 
 const (
-	appTitle                   = "MSFS2020-GoPilot"
-	assetsDir                  = "assets/"
-	dataDir                    = "data/"
+	appTitle = "MSFS2020-GoPilot"
+	dataDir  = "data/"
+
 	contentTypeHTML            = "text/html"
 	contentTypeText            = "text/plain; charset=utf-8"
-	defaultServerAddress       = "0.0.0.0:8888"
-	defaultSearchPath          = "."
 	defaultAirportSearchRadius = 50 * 1000.0
 	defaultMaxAirportCount     = 10
-	projectURL                 = "http://github.com/grumpypixel/msfs2020-gopilot"
-	releasesURL                = projectURL + "/releases"
-	connectionTimeout          = 600 // seconds
-	connectRetryInterval       = 1   // seconds
-	requestDataInterval        = 250 // milliseconds
-	receiveDataInterval        = 1   // milliseconds
-	shutdownDelay              = 3   // seconds
-	broadcastInterval          = 250
+	connectRetryInterval       = 1 // seconds
+	// dataRequestInterval        = 200 // milliseconds
+	receiveDataInterval = 1 // milliseconds
+	shutdownDelay       = 3 // seconds
+	broadcastInterval   = 250
 )
 
 type App struct {
+	cfg              *config.Config
 	requestManager   *RequestManager
 	socket           *websockets.WebSocket
 	mate             *simconnect.SimMate
 	airportsDB       *aeroports.Database
 	done             chan interface{}
 	flightSimVersion string
-	verbose          bool
 	eventListener    *simconnect.EventListener
 }
 
-func NewApp() *App {
+func NewApp(cfg *config.Config) *App {
 	return &App{
+		cfg:            cfg,
 		requestManager: NewRequestManager(),
 		done:           make(chan interface{}, 1),
 		airportsDB:     aeroports.NewDatabase(),
 	}
 }
 
-func (app *App) Run(params *config.Parameters) {
-	app.verbose = params.Verbose
-
+func (app *App) Run() error {
 	app.addEventListeners()
-
-	if err := app.airportsDB.ParseAirports(dataDir+"ourairports/airports.csv", aeroports.AirportTypeAll, true); err != nil {
-		log.Error(err)
-		app.airportsDB = nil
-	}
 
 	app.socket = websockets.NewWebSocket()
 	go app.handleSocketMessages()
 
 	serverShutdown := make(chan bool, 1)
 	defer close(serverShutdown)
-	app.initWebServer(params.ServerAddress, serverShutdown)
 
-	if err := simconnect.Initialize(params.SearchPath); err != nil {
-		log.Fatal(err)
+	app.listNetworkInterfaces()
+	app.initWebServer(app.cfg.ServerAddress, serverShutdown)
+
+	if err := app.airportsDB.ParseAirports(dataDir+"ourairports/airports.csv", aeroports.AirportTypeAll, true); err != nil {
+		log.Error(err)
+		app.airportsDB = nil
 	}
 
+	log.Info("Load SimConnect.DLL...")
+	if err := simconnect.Initialize(app.cfg.DLLSearchPath); err != nil {
+		return err
+	}
 	app.mate = simconnect.NewSimMate()
 
 	stopBroadcast := make(chan interface{}, 1)
 	defer close(stopBroadcast)
-	go app.Broadcast(time.Millisecond*broadcastInterval, stopBroadcast)
+	go app.Broadcast(broadcastInterval*time.Millisecond, stopBroadcast)
 
-	retryInterval := time.Second * connectRetryInterval
-	timeout := time.Second * time.Duration(params.Timeout)
-	if err := app.connect(params.ConnectionName, retryInterval, timeout); err != nil {
-		log.Error(err)
-		return
+	retryInterval := connectRetryInterval * time.Second
+	timeout := time.Second * time.Duration(app.cfg.ConnectionTimeout)
+	if err := app.connect(app.cfg.ConnectionName, retryInterval, timeout); err != nil {
+		return err
 	}
 
 	go app.handleTerminationSignal()
@@ -106,23 +101,24 @@ func (app *App) Run(params *config.Parameters) {
 	stopEventHandler := make(chan interface{}, 1)
 	defer close(stopEventHandler)
 
-	requestInterval := time.Millisecond * time.Duration(params.RequestInterval)
-	receiveInterval := time.Millisecond * receiveDataInterval
+	requestInterval := time.Duration(app.cfg.DataRequestInterval) * time.Millisecond
+	receiveInterval := receiveDataInterval * time.Millisecond
 	go app.mate.HandleEvents(requestInterval, receiveInterval, stopEventHandler, app.eventListener)
 
 	<-app.done
 	defer close(app.done)
 
-	fmt.Println("Shutting down")
+	log.Info("Shutting down")
 
 	stopEventHandler <- true
 	stopBroadcast <- true
 	serverShutdown <- true
 
 	if err := app.disconnect(); err != nil {
-		log.Error(err)
+		return err
 	}
-	time.Sleep(time.Second * shutdownDelay)
+	time.Sleep(shutdownDelay * time.Second)
+	return nil
 }
 
 func (app *App) addEventListeners() {
@@ -152,12 +148,11 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 		{Pattern: "/ws", Handler: app.socket.Serve},
 	}
 
-	fmt.Println("Starting web server")
+	log.Info("Starting web server")
 	staticAssetsDir := "/assets/"
 	webServer.Run(routes, staticAssetsDir)
 
-	fmt.Printf("Web Server listening on %s\n\n", address)
-	app.listNetworkInterfaces()
+	log.Info("Web Server listening on ", address)
 }
 
 // https://golang-examples.tumblr.com/post/99458329439/get-local-ip-addresses
@@ -166,9 +161,9 @@ func (app *App) listNetworkInterfaces() {
 	if err != nil {
 		return
 	}
-	fmt.Println("Your network interfaces:")
-	for i, iface := range list {
-		str := fmt.Sprintf(" %d %s: ", i+1, iface.Name)
+	networkInterfaces := []string{}
+	for _, iface := range list {
+		str := fmt.Sprintf("%s: ", iface.Name)
 		addrs, err := iface.Addrs()
 		if err != nil {
 			continue
@@ -179,13 +174,17 @@ func (app *App) listNetworkInterfaces() {
 				str += ", "
 			}
 		}
-		fmt.Println(str)
+		networkInterfaces = append(networkInterfaces, str)
 	}
-	fmt.Printf("\n")
+	str := ""
+	for i, iface := range networkInterfaces {
+		str += fmt.Sprintf(" %d %s\n", i, iface)
+	}
+	log.Info("Your network interfaces:\n", str)
 }
 
 func (app *App) connect(name string, retryInterval, timeout time.Duration) error {
-	fmt.Println("Connecting to the Simulator...")
+	log.Info("Establishing a connection with the Simulator...")
 	connectTicker := time.NewTicker(retryInterval)
 	defer connectTicker.Stop()
 
@@ -199,20 +198,20 @@ func (app *App) connect(name string, retryInterval, timeout time.Duration) error
 			count++
 			if err := app.mate.Open(name); err != nil {
 				if count%10 == 0 {
-					fmt.Printf("Connection attempts... %d\n", count)
+					log.Info("Connection attempts...", count)
 				}
 			} else {
 				return nil
 			}
 
 		case <-timeoutTimer.C:
-			return fmt.Errorf("opening a connection to the simulator timed out")
+			return fmt.Errorf("establishing a connection with the simulator timed out painfully")
 		}
 	}
 }
 
 func (app *App) disconnect() error {
-	fmt.Println("Closing connection")
+	log.Info("Closing connection")
 	if err := app.mate.Close(); err != nil {
 		return err
 	}
@@ -227,7 +226,7 @@ func (app *App) handleTerminationSignal() {
 	for {
 		select {
 		case <-sigterm:
-			app.println("Received SIGTERM")
+			log.Info("Received SIGTERM")
 			app.done <- true
 			return
 		}
@@ -242,16 +241,16 @@ func (app *App) handleSocketMessages() {
 			connID := event.Connection.UUID()
 			switch eventType {
 			case websockets.SocketEventConnected:
-				fmt.Println("Client connected:", connID)
+				log.Info("Client connected:", connID)
 
 			case websockets.SocketEventDisconnected:
-				fmt.Println("Client disconnected:", connID)
+				log.Info("Client disconnected:", connID)
 				app.removeRequests(connID)
 
 			case websockets.SocketEventMessage:
 				msg := &Message{}
 				json.Unmarshal(event.Data, msg)
-				app.println("Message", connID, msg)
+				log.Debug("Message", connID, msg)
 
 				switch msg.Type {
 				case "airports":
@@ -276,7 +275,7 @@ func (app *App) handleSocketMessages() {
 					app.handleTeleportMessage(msg)
 
 				default:
-					fmt.Printf("Received unknown message with type: %s\n data: %v\n sender: %s\n", msg.Type, msg.Data, connID)
+					log.Warn("Received unknown message with type: %s\n data: %v\n sender: %s\n", msg.Type, msg.Data, connID)
 				}
 			}
 		}
@@ -314,7 +313,7 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 
 	go func() {
 		if app.airportsDB == nil {
-			fmt.Println("Airports database not available")
+			log.Warn("Airports database not available")
 			return
 		}
 
@@ -375,16 +374,16 @@ func (app *App) handleRegisterMessage(msg *Message, raw []byte, connID string) {
 		typ := simconnect.StringToDataType(string(t))
 		moniker := string(m)
 		defineID := app.mate.AddSimVar(name, unit, typ)
-		app.println("Added SimVar", defineID, name, unit, typ)
+		log.Info("Added SimVar ", defineID, name, unit, typ)
 		request.Add(defineID, name, moniker)
 	}, "data")
 	app.requestManager.AddRequest(request)
-	app.println("Added request", request)
+	log.Info("Added request ", request)
 }
 
 func (app *App) handleSetDataMessage(msg *Message) {
 	if !app.mate.IsConnected() {
-		fmt.Println("Not connected to SimConnect. Ignoring SetDataMessage.")
+		log.Warn("Not connected to SimConnect. Ignoring SetDataMessage.")
 		return
 	}
 	name, ok := stringFromJson("name", msg.Data)
@@ -400,13 +399,13 @@ func (app *App) handleSetDataMessage(msg *Message) {
 		return
 	}
 	if err := app.mate.SetSimObjectData(name, unit, value, simconnect.DataTypeFloat64); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	}
 }
 
 func (app *App) handleTeleportMessage(msg *Message) {
 	if !app.mate.IsConnected() {
-		fmt.Println("Not connected to SimConnect. Ignoring TeleportMessage.")
+		log.Warn("Not connected to SimConnect. Ignoring TeleportMessage.")
 		return
 	}
 	latitude, ok := floatFromJson("latitude", msg.Data)
@@ -441,7 +440,7 @@ func (app *App) handleTeleportMessage(msg *Message) {
 	app.mate.SetSimObjectData("PLANE BANK DEGREES", "degrees", bank, simconnect.DataTypeFloat64)
 	app.mate.SetSimObjectData("PLANE PITCH DEGREES", "degrees", pitch, simconnect.DataTypeFloat64)
 
-	fmt.Printf("Teleporting lat: %f lng: %f alt: %f hdg: %f spd: %f bnk: %f pit: %f\n",
+	log.Info("Teleporting lat: %f lng: %f alt: %f hdg: %f spd: %f bnk: %f pit: %f\n",
 		latitude, longitude, altitude, heading, airspeed, bank, pitch)
 }
 
@@ -461,32 +460,32 @@ func (app *App) removeRequests(connID string) {
 			count := app.requestManager.RefCount(v.Name)
 			if count == 0 {
 				app.mate.RemoveSimVar(defineID)
-				app.println("Removed SimVar", defineID)
+				log.Debug("Removed SimVar", defineID)
 			}
 		}
 	}
 }
 
 func (app *App) OnOpen(applName, applVersion, applBuild, simConnectVersion, simConnectBuild string) {
-	fmt.Println("\nConnected")
+	log.Info("Connected")
 	app.flightSimVersion = fmt.Sprintf(
 		"Flight Simulator:\n Name: %s\n Version: %s (build %s)\n SimConnect: %s (build %s)",
 		applName, applVersion, applBuild, simConnectVersion, simConnectBuild)
-	fmt.Printf("\n%s\n\n", app.flightSimVersion)
-	fmt.Printf("CLEAR PROP!\n\n")
+	log.Info(app.flightSimVersion)
+	log.Info("CLEAR PROP!")
 }
 
 func (app *App) OnQuit() {
-	fmt.Println("Disconnected")
+	log.Info("Disconnected")
 	app.done <- true
 }
 
 func (app *App) OnEventID(eventID simconnect.DWord) {
-	fmt.Println("Received event ID", eventID)
+	log.Info("Received event ID", eventID)
 }
 
 func (app *App) OnException(exceptionCode simconnect.DWord) {
-	fmt.Printf("Exception (code: %d)\n", exceptionCode)
+	log.Error("Exception (code: %d)", exceptionCode)
 }
 
 // func (app *App) OnSimObjectData(data *simconnect.RecvSimObjectData) {
@@ -549,7 +548,7 @@ func (app *App) Broadcast(broadcastInterval time.Duration, stop chan interface{}
 		select {
 		case <-broadcastTicker.C:
 			if err := app.BroadcastStatusMessage(); err != nil {
-				fmt.Println(err)
+				log.Error(err)
 			}
 		case <-stop:
 			return
@@ -644,13 +643,6 @@ func (app *App) DumpedSimVars() string {
 	dump := app.mate.SimVarDump(indent)
 	str := strings.Join(dump[:], "\n")
 	return fmt.Sprintf("SimVars: %d\n", len(dump)) + str
-}
-
-func (app *App) println(a ...interface{}) (n int, err error) {
-	if app.verbose {
-		return fmt.Println(a...)
-	}
-	return 0, nil
 }
 
 func floatFromJson(key string, json map[string]interface{}) (float64, bool) {

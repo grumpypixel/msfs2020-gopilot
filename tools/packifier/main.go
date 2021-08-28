@@ -1,9 +1,9 @@
 package main
 
 import (
-	"app/filepacker"
 	"flag"
 	"fmt"
+	"msfs2020-gopilot/internal/filepacker"
 )
 
 func main() {

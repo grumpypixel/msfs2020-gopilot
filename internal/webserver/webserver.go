@@ -2,12 +2,11 @@ package webserver
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 type Route struct {
@@ -60,7 +59,7 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 		defer cancel()
 		// Doesn't block if no connections, but will otherwise wait
 		// until the timeout deadline.
-		fmt.Println("Shutting down web server")
+		log.Info("Shutting down web server")
 		server.Shutdown(ctx)
 		// Optionally, you could run srv.Shutdown in a goroutine and block on
 		// <-ctx.Done() if your application should wait for other services

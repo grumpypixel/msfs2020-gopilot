@@ -1,0 +1,6 @@
+connection_name: MyConnection
+search_path: .
+server_address: 0.0.0.0:8888
+request_interval: 
+timeout: 600s
+verbose: false
