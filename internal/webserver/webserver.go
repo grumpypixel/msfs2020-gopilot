@@ -48,7 +48,7 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	}()
 
@@ -64,6 +64,5 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 		// Optionally, you could run srv.Shutdown in a goroutine and block on
 		// <-ctx.Done() if your application should wait for other services
 		// to finalize based on context cancellation.
-		return
 	}()
 }

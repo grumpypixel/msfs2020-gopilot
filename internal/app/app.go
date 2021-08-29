@@ -108,7 +108,7 @@ func (app *App) Run() error {
 	<-app.done
 	defer close(app.done)
 
-	log.Info("Shutting down")
+	log.Info("Shutting down...")
 
 	stopEventHandler <- true
 	stopBroadcast <- true
@@ -148,7 +148,7 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 		{Pattern: "/ws", Handler: app.socket.Serve},
 	}
 
-	log.Info("Starting web server")
+	log.Info("Starting web server...")
 	staticAssetsDir := "/assets/"
 	webServer.Run(routes, staticAssetsDir)
 
@@ -226,7 +226,7 @@ func (app *App) handleTerminationSignal() {
 	for {
 		select {
 		case <-sigterm:
-			log.Info("Received SIGTERM")
+			log.Info("SIGTERM. Terminating process...")
 			app.done <- true
 			return
 		}
@@ -467,16 +467,16 @@ func (app *App) removeRequests(connID string) {
 }
 
 func (app *App) OnOpen(applName, applVersion, applBuild, simConnectVersion, simConnectBuild string) {
-	log.Info("Connected")
+	log.Info("Connected \\o/")
 	app.flightSimVersion = fmt.Sprintf(
-		"Flight Simulator:\n Name: %s\n Version: %s (build %s)\n SimConnect: %s (build %s)",
+		"Flight Simulator says:\n Name: %s\n Version: %s (build %s)\n SimConnect: %s (build %s)",
 		applName, applVersion, applBuild, simConnectVersion, simConnectBuild)
 	log.Info(app.flightSimVersion)
 	log.Info("CLEAR PROP!")
 }
 
 func (app *App) OnQuit() {
-	log.Info("Disconnected")
+	log.Info("Disconnected (︶︹︶)")
 	app.done <- true
 }
 

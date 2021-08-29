@@ -65,7 +65,7 @@ func main() {
 
 	mergeConfig(params, cfg)
 	validateConfig(cfg)
-	prettyPrint("Final configuration:\n", cfg)
+	prettyPrint("Merged configuration:\n", cfg)
 
 	if err := checkInstallation(params.DLLSearchPath); err != nil {
 		log.Fatal(err)
@@ -76,7 +76,7 @@ func main() {
 		log.Error(err)
 	}
 
-	log.Info("Bye \\o/")
+	log.Info("Bye \\(^-^)/")
 }
 
 func welcome() {
@@ -146,12 +146,14 @@ func randomConnectionName() string {
 
 func checkInstallation(dllSearchPath string) error {
 	// Check DLL
-	if !simconnect.LocateLibrary(dllSearchPath) {
+	err := simconnect.LocateLibrary(dllSearchPath)
+	if err != nil {
 		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
-		log.Warn("DLL not found...")
+		log.Warn(simconnect.SimConnectDLL, " not found")
+		log.Info("Unpacking DLL to ", fullpath)
 		data := app.PackedSimConnectDLL()
 		if err := unpack(data, fullpath); err != nil {
-			log.Error("Unable to unpack DLL:", err)
+			log.Error("Unable to unpack DLL: ", err)
 		}
 	}
 	// Check assets directory
@@ -166,7 +168,6 @@ func checkInstallation(dllSearchPath string) error {
 }
 
 func unpack(data []byte, fullpath string) error {
-	fmt.Printf("Unpacking target: %s\n", fullpath)
 	unpacked, err := filepacker.Unpack(data)
 	if err != nil {
 		return err
