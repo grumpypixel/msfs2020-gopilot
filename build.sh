@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARGET=./gopilot.exe
+EXEC=gopilot.exe
 if test -f "$EXEC"; then
   echo "Removing old executable..."
   rm $EXEC
