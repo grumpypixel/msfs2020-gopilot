@@ -9,7 +9,7 @@ fi
 if [ "$1" = "release" ]; then
   TEMPLATE=./tools/packifier/template.gopher
   PACKAGE=app
-  FUNCTION=PackedSimConnectDLL
+  FUNCTION=SimConnectDLL
 
   # pack assets
   # ASSETS_DIR="assets"
@@ -26,7 +26,7 @@ if [ "$1" = "release" ]; then
   # rm $DATA_TAR
 
   # pack simconnect dll
-  go run ./tools/packifier/main.go --in "/c/MSFS SDK/SimConnect SDK/lib/SimConnect.dll" --out "./internal/app/simconnect_dll.go" --template $TEMPLATE --package $PACKAGE --function $FUNCTION
+  go run ./tools/packifier/main.go --in "/c/MSFS SDK/SimConnect SDK/lib/SimConnect.dll" --out ./internal/app/simconnect_dll.go --template $TEMPLATE --package $PACKAGE --function $FUNCTION
 fi
 
 echo "Building..."

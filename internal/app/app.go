@@ -80,7 +80,7 @@ func (app *App) Run() error {
 		app.airportsDB = nil
 	}
 
-	log.Info("Load SimConnect.DLL...")
+	log.Info("Loading ", simconnect.SimConnectDLL, "...")
 	if err := simconnect.Initialize(app.cfg.DLLSearchPath); err != nil {
 		return err
 	}
@@ -137,15 +137,15 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 	webServer := webserver.NewWebServer(address, shutdown)
 	htmlDir := "assets/html"
 	routes := []webserver.Route{
-		{Pattern: "/", Handler: app.StaticContentHandler(htmlHeaders, "/", filepath.Join(htmlDir, "vfrmap.html"))},
-		{Pattern: "/vfrmap", Handler: app.StaticContentHandler(htmlHeaders, "/vfrmap", filepath.Join(htmlDir, "vfrmap.html"))},
-		{Pattern: "/mehmap", Handler: app.StaticContentHandler(htmlHeaders, "/mehmap", filepath.Join(htmlDir, "mehmap.html"))},
-		{Pattern: "/setdata", Handler: app.StaticContentHandler(htmlHeaders, "/setdata", filepath.Join(htmlDir, "setdata.html"))},
-		{Pattern: "/airports", Handler: app.StaticContentHandler(htmlHeaders, "/airports", filepath.Join(htmlDir, "airports.html"))},
-		{Pattern: "/teleport", Handler: app.StaticContentHandler(htmlHeaders, "/teleport", filepath.Join(htmlDir, "teleporter.html"))},
-		{Pattern: "/debug", Handler: app.GeneratedContentHandler(textHeaders, "/debug", app.DebugGenerator)},
-		{Pattern: "/simvars", Handler: app.GeneratedContentHandler(textHeaders, "/simvars", app.SimvarsGenerator)},
-		{Pattern: "/experimental", Handler: app.StaticContentHandler(htmlHeaders, "/experimental", filepath.Join(htmlDir, "experimental.html"))},
+		{Pattern: "/", Handler: app.staticContentHandler(htmlHeaders, "/", filepath.Join(htmlDir, "vfrmap.html"))},
+		{Pattern: "/vfrmap", Handler: app.staticContentHandler(htmlHeaders, "/vfrmap", filepath.Join(htmlDir, "vfrmap.html"))},
+		{Pattern: "/mehmap", Handler: app.staticContentHandler(htmlHeaders, "/mehmap", filepath.Join(htmlDir, "mehmap.html"))},
+		{Pattern: "/setdata", Handler: app.staticContentHandler(htmlHeaders, "/setdata", filepath.Join(htmlDir, "setdata.html"))},
+		{Pattern: "/airports", Handler: app.staticContentHandler(htmlHeaders, "/airports", filepath.Join(htmlDir, "airports.html"))},
+		{Pattern: "/teleport", Handler: app.staticContentHandler(htmlHeaders, "/teleport", filepath.Join(htmlDir, "teleporter.html"))},
+		{Pattern: "/experimental", Handler: app.staticContentHandler(htmlHeaders, "/experimental", filepath.Join(htmlDir, "experimental.html"))},
+		{Pattern: "/debug", Handler: app.generatedContentHandler(textHeaders, "/debug", app.DebugGenerator)},
+		{Pattern: "/simvars", Handler: app.generatedContentHandler(textHeaders, "/simvars", app.simvarsGenerator)},
 		{Pattern: "/ws", Handler: app.socket.Serve},
 	}
 
@@ -579,7 +579,7 @@ func (app *App) Headers(contentType string) map[string]string {
 	return headers
 }
 
-func (app *App) StaticContentHandler(headers map[string]string, urlPath, filePath string) http.HandlerFunc {
+func (app *App) staticContentHandler(headers map[string]string, urlPath, filePath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != urlPath {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -592,7 +592,7 @@ func (app *App) StaticContentHandler(headers map[string]string, urlPath, filePat
 	}
 }
 
-func (app *App) GeneratedContentHandler(headers map[string]string, urlPath string, generator func(w http.ResponseWriter)) http.HandlerFunc {
+func (app *App) generatedContentHandler(headers map[string]string, urlPath string, generator func(w http.ResponseWriter)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != urlPath {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -606,9 +606,9 @@ func (app *App) GeneratedContentHandler(headers map[string]string, urlPath strin
 	}
 }
 
-func (app *App) SimvarsGenerator(w http.ResponseWriter) {
+func (app *App) simvarsGenerator(w http.ResponseWriter) {
 	fmt.Fprintf(w, "%s\n\n", appTitle)
-	fmt.Fprintf(w, "%s\n", app.DumpedSimVars())
+	fmt.Fprintf(w, "%s\n", app.simVars())
 }
 
 func (app *App) DebugGenerator(w http.ResponseWriter) {
@@ -623,11 +623,11 @@ func (app *App) DebugGenerator(w http.ResponseWriter) {
 		fmt.Fprintf(w, "  %02d: %s\n", i, uuid)
 	}
 	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "%s\n\n", app.DumpedSimVars())
-	fmt.Fprintf(w, "%s\n", app.DumpedRequests())
+	fmt.Fprintf(w, "%s\n\n", app.simVars())
+	fmt.Fprintf(w, "%s\n", app.requests())
 }
 
-func (app *App) DumpedRequests() string {
+func (app *App) requests() string {
 	var dump string
 	dump += fmt.Sprintf("Requests: %d\n", app.requestManager.RequestCount())
 	for i, request := range app.requestManager.Requests {
@@ -639,7 +639,7 @@ func (app *App) DumpedRequests() string {
 	return dump
 }
 
-func (app *App) DumpedSimVars() string {
+func (app *App) simVars() string {
 	indent := "  "
 	dump := app.mate.SimVarDump(indent)
 	str := strings.Join(dump[:], "\n")

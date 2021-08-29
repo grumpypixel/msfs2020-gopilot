@@ -151,7 +151,7 @@ func checkInstallation(dllSearchPath string) error {
 		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
 		log.Warn(simconnect.SimConnectDLL, " not found")
 		log.Info("Unpacking DLL to ", fullpath)
-		data := app.PackedSimConnectDLL()
+		data := app.SimConnectDLL()
 		if err := unpack(data, fullpath); err != nil {
 			log.Error("Unable to unpack DLL: ", err)
 		}
