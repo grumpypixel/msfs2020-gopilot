@@ -145,6 +145,7 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 		{Pattern: "/teleport", Handler: app.StaticContentHandler(htmlHeaders, "/teleport", filepath.Join(htmlDir, "teleporter.html"))},
 		{Pattern: "/debug", Handler: app.GeneratedContentHandler(textHeaders, "/debug", app.DebugGenerator)},
 		{Pattern: "/simvars", Handler: app.GeneratedContentHandler(textHeaders, "/simvars", app.SimvarsGenerator)},
+		{Pattern: "/experimental", Handler: app.StaticContentHandler(htmlHeaders, "/experimental", filepath.Join(htmlDir, "experimental.html"))},
 		{Pattern: "/ws", Handler: app.socket.Serve},
 	}
 
@@ -241,10 +242,10 @@ func (app *App) handleSocketMessages() {
 			connID := event.Connection.UUID()
 			switch eventType {
 			case websockets.SocketEventConnected:
-				log.Info("Client connected:", connID)
+				log.Info("Client connected: ", connID)
 
 			case websockets.SocketEventDisconnected:
-				log.Info("Client disconnected:", connID)
+				log.Info("Client disconnected: ", connID)
 				app.removeRequests(connID)
 
 			case websockets.SocketEventMessage:
@@ -374,7 +375,7 @@ func (app *App) handleRegisterMessage(msg *Message, raw []byte, connID string) {
 		typ := simconnect.StringToDataType(string(t))
 		moniker := string(m)
 		defineID := app.mate.AddSimVar(name, unit, typ)
-		log.Info("Added SimVar ", defineID, name, unit, typ)
+		log.Info(fmt.Sprintf("Added SimVar with id: %d, name: %s, unit: %s, type: %d", defineID, name, unit, typ))
 		request.Add(defineID, name, moniker)
 	}, "data")
 	app.requestManager.AddRequest(request)
@@ -440,7 +441,7 @@ func (app *App) handleTeleportMessage(msg *Message) {
 	app.mate.SetSimObjectData("PLANE BANK DEGREES", "degrees", bank, simconnect.DataTypeFloat64)
 	app.mate.SetSimObjectData("PLANE PITCH DEGREES", "degrees", pitch, simconnect.DataTypeFloat64)
 
-	log.Info("Teleporting lat: %f lng: %f alt: %f hdg: %f spd: %f bnk: %f pit: %f\n",
+	log.Info("Teleporting to lat: %f lng: %f alt: %f hdg: %f spd: %f bnk: %f pit: %f",
 		latitude, longitude, altitude, heading, airspeed, bank, pitch)
 }
 
@@ -481,11 +482,11 @@ func (app *App) OnQuit() {
 }
 
 func (app *App) OnEventID(eventID simconnect.DWord) {
-	log.Info("Received event ID", eventID)
+	log.Info("Received event ID: ", eventID)
 }
 
 func (app *App) OnException(exceptionCode simconnect.DWord) {
-	log.Error("Exception (code: %d)", exceptionCode)
+	log.Error("Exception: ", exceptionCode)
 }
 
 // func (app *App) OnSimObjectData(data *simconnect.RecvSimObjectData) {

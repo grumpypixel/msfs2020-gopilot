@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210829082530-cd78b25ec450
+	github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210829102417-9e2088d44de4
 	github.com/ilyakaznacheev/cleanenv v1.2.5
 	github.com/mattn/go-colorable v0.1.8
 	github.com/sirupsen/logrus v1.8.1
