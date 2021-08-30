@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"msfs2020-gopilot/internal/aeroports"
 	"msfs2020-gopilot/internal/config"
+	"msfs2020-gopilot/internal/util"
 	"msfs2020-gopilot/internal/webserver"
 	"msfs2020-gopilot/internal/websockets"
 	"net"
@@ -12,7 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -295,25 +295,25 @@ func (app *App) handleSocketMessages() {
 }
 
 func (app *App) handleAirportsMessage(msg *Message, connID string) {
-	latitude, ok := floatFromJson("latitude", msg.Data)
+	latitude, ok := util.FloatFromJson("latitude", msg.Data)
 	if !ok {
 		return
 	}
-	longitude, ok := floatFromJson("longitude", msg.Data)
+	longitude, ok := util.FloatFromJson("longitude", msg.Data)
 	if !ok {
 		return
 	}
-	radiusInMeters, ok := floatFromJson("radius", msg.Data)
+	radiusInMeters, ok := util.FloatFromJson("radius", msg.Data)
 	if !ok {
 		radiusInMeters = defaultAirportSearchRadius
 	}
-	maxAirports, ok := intFromJson("maxAirports", msg.Data)
+	maxAirports, ok := util.IntFromJson("maxAirports", msg.Data)
 	if !ok {
 		maxAirports = defaultMaxAirportCount
 	}
 
 	airportFilter := aeroports.AirportTypeAll
-	filter, ok := stringFromJson("filter", msg.Data)
+	filter, ok := util.StringFromJson("filter", msg.Data)
 	if ok {
 		airportFilter = 0
 		filters := strings.Split(filter, "|")
@@ -341,8 +341,8 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 			ap["type"] = airport.Type
 			ap["icao"] = airport.ICAOCode
 			ap["name"] = airport.Name
-			ap["latitude"] = strconv.FormatFloat(airport.LatitudeDeg, 'f', -1, 64)
-			ap["longitude"] = strconv.FormatFloat(airport.LongitudeDeg, 'f', -1, 64)
+			ap["latitude"] = util.FloatToString(airport.LatitudeDeg)
+			ap["longitude"] = util.FloatToString(airport.LongitudeDeg)
 			ap["elevation"] = fmt.Sprint(airport.ElevationFt)
 			airportList = append(airportList, ap)
 		}
@@ -408,15 +408,15 @@ func (app *App) handleSetDataMessage(msg *Message) {
 		log.Warn("Not connected to SimConnect. Ignoring SetDataMessage.")
 		return
 	}
-	name, ok := stringFromJson("name", msg.Data)
+	name, ok := util.StringFromJson("name", msg.Data)
 	if !ok {
 		return
 	}
-	unit, ok := stringFromJson("unit", msg.Data)
+	unit, ok := util.StringFromJson("unit", msg.Data)
 	if !ok {
 		return
 	}
-	value, ok := floatFromJson("value", msg.Data)
+	value, ok := util.FloatFromJson("value", msg.Data)
 	if !ok {
 		return
 	}
@@ -430,23 +430,23 @@ func (app *App) handleTeleportMessage(msg *Message) {
 		log.Warn("Not connected to SimConnect. Ignoring TeleportMessage.")
 		return
 	}
-	latitude, ok := floatFromJson("latitude", msg.Data)
+	latitude, ok := util.FloatFromJson("latitude", msg.Data)
 	if !ok {
 		return
 	}
-	longitude, ok := floatFromJson("longitude", msg.Data)
+	longitude, ok := util.FloatFromJson("longitude", msg.Data)
 	if !ok {
 		return
 	}
-	altitude, ok := floatFromJson("altitude", msg.Data)
+	altitude, ok := util.FloatFromJson("altitude", msg.Data)
 	if !ok {
 		return
 	}
-	heading, ok := floatFromJson("heading", msg.Data)
+	heading, ok := util.FloatFromJson("heading", msg.Data)
 	if !ok {
 		return
 	}
-	airspeed, ok := floatFromJson("airspeed", msg.Data)
+	airspeed, ok := util.FloatFromJson("airspeed", msg.Data)
 	if !ok {
 		return
 	}
@@ -665,28 +665,4 @@ func (app *App) simVars() string {
 	dump := app.mate.SimVarDump(indent)
 	str := strings.Join(dump[:], "\n")
 	return fmt.Sprintf("SimVars: %d\n", len(dump)) + str
-}
-
-func floatFromJson(key string, json map[string]interface{}) (float64, bool) {
-	value, ok := json[key]
-	if !ok {
-		return 0.0, false
-	}
-	return value.(float64), true
-}
-
-func intFromJson(key string, json map[string]interface{}) (int, bool) {
-	value, ok := json[key]
-	if !ok {
-		return 0, false
-	}
-	return int(value.(float64)), true
-}
-
-func stringFromJson(key string, json map[string]interface{}) (string, bool) {
-	value, ok := json[key]
-	if !ok {
-		return "", false
-	}
-	return value.(string), true
 }
