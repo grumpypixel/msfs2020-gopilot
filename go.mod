@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/grumpypixel/go-airport-finder v0.0.0-20210829075110-de5e7ba8ce8d
+	github.com/grumpypixel/go-airport-finder v0.0.0-20210830205901-bd27a4d06609
 	github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210829102417-9e2088d44de4
 	github.com/ilyakaznacheev/cleanenv v1.2.5
 	github.com/mattn/go-colorable v0.1.8

@@ -12,11 +12,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/buger/jsonparser"
+	alphafoxtrot "github.com/grumpypixel/go-airport-finder"
 	"github.com/grumpypixel/msfs2020-simconnect-go/simconnect"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,18 +31,18 @@ type Message struct {
 }
 
 const (
-	appTitle = "MSFS2020-GoPilot"
-	dataDir  = "data/"
-
+	appTitle                   = "MSFS2020-GoPilot"
+	dataDir                    = "data/"
+	airportsDataDir            = dataDir + "/ourairports"
 	contentTypeHTML            = "text/html"
 	contentTypeText            = "text/plain; charset=utf-8"
 	defaultAirportSearchRadius = 50 * 1000.0
 	defaultMaxAirportCount     = 10
 	connectRetryInterval       = 1 // seconds
+	receiveDataInterval        = 1 // milliseconds
+	shutdownDelay              = 3 // seconds
+	broadcastInterval          = 250
 	// dataRequestInterval        = 200 // milliseconds
-	receiveDataInterval = 1 // milliseconds
-	shutdownDelay       = 3 // seconds
-	broadcastInterval   = 250
 )
 
 type App struct {
@@ -48,10 +50,11 @@ type App struct {
 	requestManager   *RequestManager
 	socket           *websockets.WebSocket
 	mate             *simconnect.SimMate
-	airportsDB       *aeroports.Database
+	airportFinder    *alphafoxtrot.AirportFinder
 	done             chan interface{}
 	flightSimVersion string
 	eventListener    *simconnect.EventListener
+	// airportsDB       *aeroports.Database
 }
 
 func NewApp(cfg *config.Config) *App {
@@ -59,7 +62,7 @@ func NewApp(cfg *config.Config) *App {
 		cfg:            cfg,
 		requestManager: NewRequestManager(),
 		done:           make(chan interface{}, 1),
-		airportsDB:     aeroports.NewDatabase(),
+		airportFinder:  alphafoxtrot.NewAirportFinder(),
 	}
 }
 
@@ -75,9 +78,17 @@ func (app *App) Run() error {
 	app.listNetworkInterfaces()
 	app.initWebServer(app.cfg.ServerAddress, serverShutdown)
 
-	if err := app.airportsDB.ParseAirports(dataDir+"ourairports/airports.csv", aeroports.AirportTypeAll, true); err != nil {
-		log.Error(err)
-		app.airportsDB = nil
+	airportFinderOptions := alphafoxtrot.PresetLoadOptions(airportsDataDir)
+	airportFinderFilter := alphafoxtrot.AirportTypeAll
+
+	// Load the data into memory
+	log.Info("Loading airport database...")
+	if errs := app.airportFinder.Load(airportFinderOptions, airportFinderFilter); len(errs) > 0 {
+		log.Warn("Airport finder will not be available, because of the following errors:")
+		for err := range errs {
+			log.Error(err)
+		}
+		app.airportFinder = nil
 	}
 
 	log.Info("Loading ", simconnect.SimConnectDLL, "...")
@@ -292,9 +303,9 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 	if !ok {
 		return
 	}
-	radius, ok := floatFromJson("radius", msg.Data)
+	radiusInMeters, ok := floatFromJson("radius", msg.Data)
 	if !ok {
-		radius = defaultAirportSearchRadius
+		radiusInMeters = defaultAirportSearchRadius
 	}
 	maxAirports, ok := intFromJson("maxAirports", msg.Data)
 	if !ok {
@@ -313,21 +324,26 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 	}
 
 	go func() {
-		if app.airportsDB == nil {
+		if app.airportFinder == nil {
 			log.Warn("Airports database not available")
 			return
 		}
 
-		airports := app.airportsDB.FindNearestAirports(latitude, longitude, radius, maxAirports, airportFilter)
+		log.Info("Finding airports...")
+		airports := app.airportFinder.FindNearestAirports(latitude, longitude, radiusInMeters, maxAirports, uint64(airportFilter))
+		if len(airports) == 0 {
+			log.Info("No airports found around ", latitude, ", ", longitude)
+		}
+
 		airportList := make([]map[string]interface{}, 0)
 		for _, airport := range airports {
 			ap := make(map[string]interface{})
-			ap["type"] = aeroports.AirportTypeToString(airport.Type)
-			ap["icao"] = airport.ICAO
+			ap["type"] = airport.Type
+			ap["icao"] = airport.ICAOCode
 			ap["name"] = airport.Name
-			ap["latitude"] = airport.Latitude
-			ap["longitude"] = airport.Longitude
-			ap["elevation"] = airport.Elevation
+			ap["latitude"] = strconv.FormatFloat(airport.LatitudeDeg, 'f', -1, 64)
+			ap["longitude"] = strconv.FormatFloat(airport.LongitudeDeg, 'f', -1, 64)
+			ap["elevation"] = fmt.Sprint(airport.ElevationFt)
 			airportList = append(airportList, ap)
 		}
 
@@ -336,8 +352,13 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 			"meta": msg.Meta,
 			"data": airportList,
 		}
+
+		log.Infof("Found %d airports", len(airports))
 		if buf, err := json.Marshal(reply); err == nil {
 			app.socket.Send(connID, buf)
+			log.Debug(airportList)
+		} else {
+			log.Error(err)
 		}
 	}()
 }
