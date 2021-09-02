@@ -132,10 +132,12 @@
         </tr>
         <tr>
             <td colspan="3">
-                <input type="checkbox" id="closed_airports" />
-                <label>Closed</label>
+                <input type="checkbox" id="seaplane_base" />
+                <label>Seaplane</label>
                 <input type="checkbox" id="heliports" />
                 <label>Heliport</label>
+                <input type="checkbox" id="closed_airports" />
+                <label>Closed</label>
             </td>
         </tr>
         <tr>
@@ -218,6 +220,7 @@ const elements = {
     smallAirports: null,
     mediumAirports: null,
     largeAirports: null,
+    seaplaneBase: null,
     closedAirports: null,
     heliports: null,
 };
@@ -289,6 +292,7 @@ function initElements() {
     elements.mediumAirports = document.getElementById('medium_airports');
     elements.largeAirports = document.getElementById('large_airports');
     elements.closedAirports = document.getElementById('closed_airports');
+    elements.seaplaneBase = document.getElementById('seaplane_base');
     elements.heliports = document.getElementById('heliports');
     updateFollowPlaneElement(vars.followPlane);
     updateSearchRadiusElement(vars.searchRadius);
@@ -587,31 +591,35 @@ function deregister() {
 }
 
 function findAirports() {
+    let filters = [];
+    if (elements.closedAirports.checked === true) {
+        filters.push('closed');
+    }
+    if (elements.seaplaneBase.checked === true) {
+        filters.push('seaplane_base');
+    }
+    if (elements.heliports.checked === true) {
+        filters.push('heliport');
+    }
+    if (elements.smallAirports.checked === true) {
+        filters.push('small_airport');
+    }
+    if (elements.mediumAirports.checked === true) {
+        filters.push('medium_airport');
+    }
+    if (elements.largeAirports.checked === true) {
+        filters.push('large_airport');
+    }
+
+    if (filters.length === 0) {
+        return;
+    }
+    
     const latitude = vars.selectedLatLng[0];
     const longitude = vars.selectedLatLng[1];
     const radius = vars.searchRadius * 1.852 * 1000.0;
     const maxAirports = vars.maxAirports;
-
-    let filter = '';
-    if (elements.closedAirports.checked === true) {
-        filter += 'closed';
-    }
-    if (elements.heliports.checked === true) {
-        filter += filter ? '|' : '';
-        filter += 'heliport';
-    }
-    if (elements.smallAirports.checked === true) {
-        filter += filter ? '|' : '';
-        filter += 'small_airport';
-    }
-    if (elements.mediumAirports.checked === true) {
-        filter += filter ? '|' : '';
-        filter += 'medium_airport';
-    }
-    if (elements.largeAirports.checked === true) {
-        filter += filter ? '|' : '';
-        filter += 'large_airport';
-    }
+    const filter = filters.join('|');
 
     data = {latitude, longitude, radius, maxAirports, filter};
     meta = 'nil';

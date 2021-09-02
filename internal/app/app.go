@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"msfs2020-gopilot/internal/aeroports"
 	"msfs2020-gopilot/internal/config"
 	"msfs2020-gopilot/internal/util"
 	"msfs2020-gopilot/internal/webserver"
@@ -54,7 +53,6 @@ type App struct {
 	done             chan interface{}
 	flightSimVersion string
 	eventListener    *simconnect.EventListener
-	// airportsDB       *aeroports.Database
 }
 
 func NewApp(cfg *config.Config) *App {
@@ -76,13 +74,10 @@ func (app *App) Run() error {
 	defer close(serverShutdown)
 
 	app.listNetworkInterfaces()
-	app.initWebServer(app.cfg.ServerAddress, serverShutdown)
 
+	log.Info("Loading airport database...")
 	airportFinderOptions := alphafoxtrot.PresetLoadOptions(airportsDataDir)
 	airportFinderFilter := alphafoxtrot.AirportTypeAll
-
-	// Load the data into memory
-	log.Info("Loading airport database...")
 	if errs := app.airportFinder.Load(airportFinderOptions, airportFinderFilter); len(errs) > 0 {
 		log.Warn("Airport finder will not be available, because of the following errors:")
 		for err := range errs {
@@ -95,7 +90,9 @@ func (app *App) Run() error {
 	if err := simconnect.Initialize(app.cfg.DLLSearchPath); err != nil {
 		return err
 	}
+
 	app.mate = simconnect.NewSimMate()
+	app.initWebServer(app.cfg.ServerAddress, serverShutdown)
 
 	stopBroadcast := make(chan interface{}, 1)
 	defer close(stopBroadcast)
@@ -312,13 +309,13 @@ func (app *App) handleAirportsMessage(msg *Message, connID string) {
 		maxAirports = defaultMaxAirportCount
 	}
 
-	airportFilter := aeroports.AirportTypeAll
+	airportFilter := alphafoxtrot.AirportTypeAll
 	filter, ok := util.StringFromJson("filter", msg.Data)
 	if ok {
 		airportFilter = 0
 		filters := strings.Split(filter, "|")
 		for _, str := range filters {
-			f := aeroports.AirportTypeFromString(str)
+			f := alphafoxtrot.AirportTypeFromString(str)
 			airportFilter |= f
 		}
 	}
