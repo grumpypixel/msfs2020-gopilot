@@ -24,7 +24,7 @@ const (
 	dataDir   = "data/"
 	assetsDir = "assets/"
 
-	defaultConfigFilePath = "./config/config.yaml"
+	defaultConfigFilePath = "./configs/config.yaml"
 	defaultServerAddress  = "0.0.0.0:8888"
 	defaultDLLSearchPath  = "."
 	projectURL            = "http://github.com/grumpypixel/msfs2020-gopilot"
@@ -138,7 +138,7 @@ func randomConnectionName() string {
 	names := []string{
 		"0xDECAFBAD", "0xBADDCAFE", "0xCAFED00D",
 		"Boobytrap", "Sobeit Void", "Transpotato",
-		"A but Tuba", "Evil Olive", "Flee to Me, Remote Elf",
+		"A Butt Tuba", "Evil Olive", "Flee to Me, Remote Elf",
 		"Sit on a Potato Pan, Otis", "Taco Cat", "UFO Tofu",
 	}
 	return names[rand.Intn(len(names))]
