@@ -18,6 +18,8 @@ github.com/grumpypixel/go-webget v0.0.0-20210513194017-df576311f21d h1:ZD475Db8F
 github.com/grumpypixel/go-webget v0.0.0-20210513194017-df576311f21d/go.mod h1:TZ3kzdKP644McT9EqfvX6vRcnoKxAGNJVbUGfDCgbpA=
 github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210829102417-9e2088d44de4 h1:tg+vm4nSX/LNBQoc9gnNf02JaiRIo/zsTekDw2CtjSE=
 github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210829102417-9e2088d44de4/go.mod h1:MnefrhmwOEg615VLYjumFfRhJetp5TJ+wxE5JFJYk4Y=
+github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210927204210-b46d02c1b825 h1:ClDw/Lf4IuU+9rMDmSBcoUB0SbehNRseKfq2Ny+EzKA=
+github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210927204210-b46d02c1b825/go.mod h1:MnefrhmwOEg615VLYjumFfRhJetp5TJ+wxE5JFJYk4Y=
 github.com/ilyakaznacheev/cleanenv v1.2.5 h1:/SlcF9GaIvefWqFJzsccGG/NJdoaAwb7Mm7ImzhO3DM=
 github.com/ilyakaznacheev/cleanenv v1.2.5/go.mod h1:/i3yhzwZ3s7hacNERGFwvlhwXMDcaqwIzmayEhbRplk=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=

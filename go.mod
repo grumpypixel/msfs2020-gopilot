@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grumpypixel/go-airport-finder v0.0.0-20210902211810-793a4fb1490b
-	github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210829102417-9e2088d44de4
+	github.com/grumpypixel/msfs2020-simconnect-go v0.4.1-0.20210927204210-b46d02c1b825
 	github.com/ilyakaznacheev/cleanenv v1.2.5
 	github.com/mattn/go-colorable v0.1.8
 	github.com/sirupsen/logrus v1.8.1

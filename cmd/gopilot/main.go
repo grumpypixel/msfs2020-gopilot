@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math/rand"
 	"msfs2020-gopilot/internal/app"
 	"msfs2020-gopilot/internal/config"
 	"msfs2020-gopilot/internal/filepacker"
-	"msfs2020-gopilot/internal/util"
 	"os"
 	"path"
 	"time"
@@ -82,7 +82,7 @@ func welcome() {
 
 func newDefaultConfig() *config.Config {
 	return &config.Config{
-		ConnectionName:      util.RandomConnectionName(),
+		ConnectionName:      randomConnectionName(),
 		ConnectionTimeout:   defaultConnectionTimeout,
 		SimConnectDLLPath:   ".",
 		ServerAddress:       defaultServerAddress,
@@ -93,9 +93,12 @@ func newDefaultConfig() *config.Config {
 
 func checkInstallation(simConnectDLLPath string) error {
 	// Check DLL
-	err := simconnect.LocateLibrary(simConnectDLLPath)
+	libPath, err := simconnect.LocateLibrary(simConnectDLLPath)
+	if libPath != "" {
+		log.Infof("Found DLL at {%s}", libPath)
+	}
 	if err != nil {
-		log.Errorf("SimConnect.dll not found at path {%s} (error: %s)", simConnectDLLPath, err.Error())
+		log.Errorf("DLL not found at {%s} (error: %s)", simConnectDLLPath, err.Error())
 		fullpath := path.Join("./", simconnect.SimConnectDLL)
 		log.Info("Unpacking SimConnect.dll to ", fullpath)
 		data := app.SimConnectDLL()
@@ -148,12 +151,21 @@ func getLogLevel(level string) log.Level {
 		return log.ErrorLevel
 	case "warn":
 		return log.WarnLevel
-	// case "info":
-	// 	return logrus.InfoLevel
 	case "debug":
 		return log.DebugLevel
 	case "trace":
 		return log.TraceLevel
 	}
 	return log.InfoLevel
+}
+
+func randomConnectionName() string {
+	rand.Seed(time.Now().Unix())
+	names := []string{
+		"0xDECAFBAD", "0xBADDCAFE", "0xCAFED00D",
+		"Boobytrap", "Sobeit Void", "Transpotato",
+		"A Butt Tuba", "Evil Olive", "Flee to Me, Remote Elf",
+		"Sit on a Potato Pan, Otis", "Taco Cat", "UFO Tofu",
+	}
+	return names[rand.Intn(len(names))]
 }

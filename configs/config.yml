@@ -1,5 +1,5 @@
 connection_name: GoPilot
-simconnect_dll_path: .
+simconnect_dll_path: ../..
 server_address: 0.0.0.0:8880
 data_request_interval: 200
 connection_timeout: 600
