@@ -1,6 +1,8 @@
 package util
 
-import "strconv"
+import (
+	"strconv"
+)
 
 func FloatFromJson(key string, json map[string]interface{}) (float64, bool) {
 	value, ok := json[key]

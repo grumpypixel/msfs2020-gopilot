@@ -87,7 +87,7 @@ func (app *App) Run() error {
 	}
 
 	log.Info("Loading ", simconnect.SimConnectDLL, "...")
-	if err := simconnect.Initialize(app.cfg.DLLSearchPath); err != nil {
+	if err := simconnect.Initialize(app.cfg.SimConnectDLLPath); err != nil {
 		return err
 	}
 
@@ -193,7 +193,7 @@ func (app *App) listNetworkInterfaces() {
 }
 
 func (app *App) connect(name string, retryInterval, timeout time.Duration) error {
-	log.Info("Establishing a connection with the Simulator...")
+	log.Info("Trying to establish a connection with the Simulator...")
 	connectTicker := time.NewTicker(retryInterval)
 	defer connectTicker.Stop()
 
