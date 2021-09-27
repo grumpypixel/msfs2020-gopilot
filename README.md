@@ -188,22 +188,31 @@ The available keyboard shortcuts for the VFR map are:
 
 Assuming you have installed [Go](https://golang.org/dl/) on your machine and cloned or downloaded the repository, you can build & run GoPilot as follows:
 
-[Bash](https://gitforwindows.org):
+With [bash](https://gitforwindows.org):
+
 ```console
-$ build.sh
-$ run.sh
+$ ./scripts/build.sh
 ```
 
-Or manually (also Bash):
+Or manually (with bash):
+
 ```console
-$ CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o gopilot/main.go gopilot/request_manager.go gopilot/assetspack.go gopilot/datapack.go gopilot/dllpack.go
-$ ./gopilot.exe
+$ CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o gopilot.exe ./cmd/gopilot/main.go
 ```
 
-Windows Command Prompt:
+Without bash:
+
 ```console
-$ build.bat
-$ gopilot.exe
+$ ./scripts/build.bat
+```
+
+Or manually (without bash):
+
+```console
+set CGO_ENABLED=1
+set GOOS=windows
+set GOARCH=amd64
+go build -o gopilot.exe ./cmd/gopilot/main.go
 ```
 
 ## How do I find my IP address?
@@ -222,14 +231,14 @@ There you are looking for something like this:
 Wireless LAN adapter Wi-Fi:
 
    Connection-specific DNS Suffix  . : wicked.wifi.box
-   IPv4 Address. . . . . . . . . . . : 192.168.0.73
+   IPv4 Address. . . . . . . . . . . : 192.168.11.73
    Subnet Mask . . . . . . . . . . . : 255.255.255.0
-   Default Gateway . . . . . . . . . : 192.168.0.1
+   Default Gateway . . . . . . . . . : 192.168.11.1
 ```
 
-In this case, *192.168.0.73* would be your local IP address which you can use to connect to from another computer.
+In this case, *192.168.11.73* would be your local IP address which you can use to connect to from another computer.
 
-So instead of `http://localhost:8888` you would enter `http://192.168.0.73:8888` in your browser's address bar.
+So instead of `http://localhost:8888` you would enter `http://192.168.11.73:8888` in your browser's address bar.
 
 ## Where's this SimConnect.dll?
 
