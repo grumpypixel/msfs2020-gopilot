@@ -1,6 +1,6 @@
 connection_name: GoPilot
 simconnect_dll_path: .
-server_address: 0.0.0.0:8880
+server_address: 0.0.0.0:8888
 data_request_interval: 250
 connection_timeout: 1200
 log_level: debug
