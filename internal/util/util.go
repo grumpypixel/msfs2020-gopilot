@@ -1,6 +1,10 @@
 package util
 
-import "strconv"
+import (
+	"math/rand"
+	"strconv"
+	"time"
+)
 
 func FloatFromJson(key string, json map[string]interface{}) (float64, bool) {
 	value, ok := json[key]
@@ -51,4 +55,15 @@ func MinInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func RandomConnectionName() string {
+	rand.Seed(time.Now().Unix())
+	names := []string{
+		"0xDECAFBAD", "0xBADDCAFE", "0xCAFED00D",
+		"Boobytrap", "Sobeit Void", "Transpotato",
+		"A Butt Tuba", "Evil Olive", "Flee to Me, Remote Elf",
+		"Sit on a Potato Pan, Otis", "Taco Cat", "UFO Tofu",
+	}
+	return names[rand.Intn(len(names))]
 }

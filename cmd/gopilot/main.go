@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"math/rand"
 	"msfs2020-gopilot/internal/app"
 	"msfs2020-gopilot/internal/config"
 	"msfs2020-gopilot/internal/filepacker"
+	"msfs2020-gopilot/internal/util"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/common-nighthawk/go-figure"
@@ -24,23 +23,16 @@ const (
 	dataDir   = "data/"
 	assetsDir = "assets/"
 
-	defaultConfigFilePath = "./configs/config.yaml"
-	defaultServerAddress  = "0.0.0.0:8888"
-	defaultDLLSearchPath  = "."
-	projectURL            = "http://github.com/grumpypixel/msfs2020-gopilot"
-	releasesURL           = projectURL + "/releases"
-	connectionTimeout     = 600 // seconds
-	requestDataInterval   = 200 // milliseconds
+	defaultConfigFilePath      = "./configs/config.yml"
+	defaultServerAddress       = "0.0.0.0:8888"
+	defaultSimConnectDLLPath   = "."
+	defaultConnectionTimeout   = 600 // seconds
+	defaultRequestDataInterval = 200 // milliseconds
+	projectURL                 = "http://github.com/grumpypixel/msfs2020-gopilot"
+	releasesURL                = projectURL + "/releases"
 )
 
 type Parameters struct {
-	ConfigFilePath      string
-	ConnectionName      string
-	ConnectionTimeout   int64
-	DLLSearchPath       string
-	ServerAddress       string
-	DataRequestInterval int64
-	Verbose             bool
 }
 
 func init() {
@@ -54,20 +46,23 @@ func init() {
 func main() {
 	welcome()
 
-	params := parseParams()
-	prettyPrint("Your command line parameters:\n", params)
+	var configFilePath string
+	flag.StringVar(&configFilePath, "cfg", defaultConfigFilePath, "Config file location")
+	flag.Parse()
 
-	cfg, err := config.NewConfig(params.ConfigFilePath)
+	log.Infof("Loading config at {%s}", configFilePath)
+	cfg, err := config.NewConfigFromFile(configFilePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Info("Loading a default configuration...")
+		cfg = newDefaultConfig()
 	}
-	prettyPrint("Your configuration:\n", cfg)
+	prettyPrint("Configuration:\n", cfg)
 
-	mergeConfig(params, cfg)
-	validateConfig(cfg)
-	prettyPrint("Merged configuration:\n", cfg)
+	log.SetLevel(getLogLevel(cfg.LogLevel))
 
-	if err := checkInstallation(params.DLLSearchPath); err != nil {
+	log.Trace("TRACE!!!!")
+
+	if err := checkInstallation(cfg.SimConnectDLLPath); err != nil {
 		log.Fatal(err)
 	}
 
@@ -85,72 +80,24 @@ func welcome() {
 	fmt.Printf("\nWelcome to %s\nHomepage: %s\nReleases: %s\n\n", appTitle, projectURL, releasesURL)
 }
 
-func parseParams() *Parameters {
-	params := &Parameters{}
-	flag.StringVar(&params.ConfigFilePath, "config", defaultConfigFilePath, "Config file location")
-	flag.StringVar(&params.ConnectionName, "name", "", "Connection name")
-	flag.StringVar(&params.DLLSearchPath, "searchpath", "", "Additional DLL search path")
-	flag.StringVar(&params.ServerAddress, "address", "", "Web server address (ipaddr:port)")
-	flag.Int64Var(&params.DataRequestInterval, "requestinterval", -1, "Request data interval in milliseconds")
-	flag.Int64Var(&params.ConnectionTimeout, "timeout", -1, "Timeout in seconds")
-
-	// boolean params expect an equal sign (=) between the variable name and the value, i.e. verbose=true. meh.
-	// see also: https://stackoverflow.com/questions/27411691/how-to-pass-boolean-arguments-to-go-flags/27411724
-	// flag.BoolVar(&params.verbose, "verbose", false, "Verbosity")
-	// so out of pure convenience we'll use strings here
-	verbose := flag.String("verbose", "false", "Verbosity")
-	flag.Parse()
-
-	*verbose = strings.ToLower(*verbose)
-	params.Verbose = *verbose == "1" || *verbose == "true"
-	return params
-}
-
-func mergeConfig(params *Parameters, cfg *config.Config) {
-	if params.ConnectionName != "" {
-		cfg.ConnectionName = params.ConnectionName
-	}
-	if params.ConnectionTimeout >= 0 {
-		cfg.ConnectionTimeout = params.ConnectionTimeout
-	}
-	if params.DLLSearchPath != "" {
-		cfg.DLLSearchPath = params.DLLSearchPath
-	}
-	if params.ServerAddress != "" {
-		cfg.ServerAddress = params.ServerAddress
-	}
-	if params.DataRequestInterval >= 0 {
-		cfg.DataRequestInterval = params.DataRequestInterval
-	}
-	if params.Verbose {
-		cfg.Verbose = params.Verbose
+func newDefaultConfig() *config.Config {
+	return &config.Config{
+		ConnectionName:      util.RandomConnectionName(),
+		ConnectionTimeout:   defaultConnectionTimeout,
+		SimConnectDLLPath:   ".",
+		ServerAddress:       defaultServerAddress,
+		DataRequestInterval: defaultRequestDataInterval,
+		LogLevel:            "info",
 	}
 }
 
-func validateConfig(cfg *config.Config) {
-	if cfg.ConnectionName == "" {
-		cfg.ConnectionName = randomConnectionName()
-	}
-}
-
-func randomConnectionName() string {
-	rand.Seed(time.Now().Unix())
-	names := []string{
-		"0xDECAFBAD", "0xBADDCAFE", "0xCAFED00D",
-		"Boobytrap", "Sobeit Void", "Transpotato",
-		"A Butt Tuba", "Evil Olive", "Flee to Me, Remote Elf",
-		"Sit on a Potato Pan, Otis", "Taco Cat", "UFO Tofu",
-	}
-	return names[rand.Intn(len(names))]
-}
-
-func checkInstallation(dllSearchPath string) error {
+func checkInstallation(simConnectDLLPath string) error {
 	// Check DLL
-	err := simconnect.LocateLibrary(dllSearchPath)
+	err := simconnect.LocateLibrary(simConnectDLLPath)
 	if err != nil {
-		fullpath := path.Join(dllSearchPath, simconnect.SimConnectDLL)
-		log.Warn(simconnect.SimConnectDLL, " not found")
-		log.Info("Unpacking DLL to ", fullpath)
+		log.Errorf("SimConnect.dll not found at path {%s} (error: %s)", simConnectDLLPath, err.Error())
+		fullpath := path.Join("./", simconnect.SimConnectDLL)
+		log.Info("Unpacking SimConnect.dll to ", fullpath)
 		data := app.SimConnectDLL()
 		if err := unpack(data, fullpath); err != nil {
 			log.Error("Unable to unpack DLL: ", err)
@@ -186,11 +133,27 @@ func unpack(data []byte, fullpath string) error {
 	return nil
 }
 
-func prettyPrint(info string, data interface{}) {
+func prettyPrint(msg string, data interface{}) {
 	bytes, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	log.Info(info, string(bytes))
+	log.Info(msg, string(bytes))
+}
+
+func getLogLevel(level string) log.Level {
+	switch level {
+	case "error":
+		return log.ErrorLevel
+	case "warn":
+		return log.WarnLevel
+	// case "info":
+	// 	return logrus.InfoLevel
+	case "debug":
+		return log.DebugLevel
+	case "trace":
+		return log.TraceLevel
+	}
+	return log.InfoLevel
 }

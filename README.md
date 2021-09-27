@@ -28,6 +28,20 @@ Unzip the archive, run gopilot.exe and browse to `http://localhost:8888` (or: `h
 <img src="https://user-images.githubusercontent.com/28186486/107130277-129f9f00-68cc-11eb-9120-14a9ecce852d.png" width="18%"></img>
 <img src="https://user-images.githubusercontent.com/28186486/108609536-d2154a80-73ce-11eb-935d-498923f8b538.png" width="18%"></img>
 
+## Run GoPilot
+
+Run GoPilot:
+
+```console
+$ gopilot.exe
+```
+
+Or run GoPilot with your own configuration file:
+
+```console
+$ gopilot.exe --cfg configs/my-config-file.yml
+```
+
 ## GoPilot is running. Now what?
 
 The gopilot executable starts a local web server which you can connect to with a browser.
@@ -42,24 +56,6 @@ Teleport Service:\
 
 Airport Finder:\
 `http://localhost:8888/airports`
-
-## GoPilot command-line options
-
-You can run GoPilot with the following options:
-
-* Connection Name: --name <YOUR_CONNECTION_NAME> (default: "GoPilot")
-* DLL Search Path: --searchpath <PATH_TO_SIMCONNECT_DLL> (default: ".")
-* Server Address: --address \<ADDRESS:PORT> (default: "0.0.0.0:8888")
-* Request Interval: --requestinterval <INTERVAL_IN_MILLISECONDS> (default: 250)
-* Timeout: --timeout <TIMEOUT_IN_SECONDS> (default: 600)
-* Verbosity: --verbose <BOOLEAN_VALUE> (default: false)
-
-Example:
-```console
-$ gopilot.exe --name POTATOSQUAD --searchpath ../.. --address 0.0.0.13370 --requestinterval 200 --timeout 1000
-```
-
-Note: GoPilot already is pretty verbose. A false verbosity flag just hides a bunch of additional debug messages.
 
 ## Web Server API
 
