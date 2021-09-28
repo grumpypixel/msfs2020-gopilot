@@ -151,7 +151,7 @@ func (app *App) initWebServer(address string, shutdown chan bool) {
 		{Pattern: "/setdata", Handler: app.staticContentHandler(htmlHeaders, "/setdata", filepath.Join(htmlDir, "setdata.html"))},
 		{Pattern: "/airports", Handler: app.staticContentHandler(htmlHeaders, "/airports", filepath.Join(htmlDir, "airports.html"))},
 		{Pattern: "/teleport", Handler: app.staticContentHandler(htmlHeaders, "/teleport", filepath.Join(htmlDir, "teleporter.html"))},
-		{Pattern: "/experimental", Handler: app.staticContentHandler(htmlHeaders, "/experimental", filepath.Join(htmlDir, "experimental.html"))},
+		{Pattern: "/experimental", Handler: app.staticContentHandler(htmlHeaders, "/experimental", filepath.Join(htmlDir, "experimental/index.html"))},
 		{Pattern: "/debug", Handler: app.generatedContentHandler(textHeaders, "/debug", app.DebugGenerator)},
 		{Pattern: "/simvars", Handler: app.generatedContentHandler(textHeaders, "/simvars", app.simvarsGenerator)},
 		{Pattern: "/ws", Handler: app.socket.Serve},
