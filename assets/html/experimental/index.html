@@ -3,24 +3,172 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Experimental</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Steep Turns Maneuver</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.15.4/css/all.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
+
+    <style type="text/css">
+        div.loadingOverlay {
+            /* opacity: 0.9; */
+            background: #fff;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            top: 0;
+            left: 0;
+            position: fixed;
+        }
+    </style>
 </head>
 
-<body>
+<body class="has-background-dark">
     <div id="app">
-
-    <div class="section">
-        <div class="box has-background-dark">
-            <div class="has-text-white">
-                Experimental
+        <div v-if="loading" class="loadingOverlay" style="vertical-align: middle; text-align: center;">loading...</div>
+        <!-- <h1>{{$root.$options.monikers}}</h1> -->
+        <!-- <h1>{{$root.$options.app.monikers}}</h1> -->
+        <section class="hero">
+            <div class="hero-body">
+                <p class="title has-text-white">
+                    {{title}}
+                </p>
             </div>
+        </section>
+        <div class="section">
+            <!-- Setup -->
+            <div class="subtitle has-text-white">Setup</div>
+            <div class="box">
+                <table class="table">
+                    <tr>
+                        <th colspan="5">Reference Values</th>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Altitude [ft]</td>
+                        <td>
+                            <div class="control">
+                                <input :class="altitudeInputClass" v-model="selectedAltitude" type="number" min="1500" max="30000" step="1" :disabled="recordingStarted">
+                            </div>
+                        </td>
+                        <td colspan="2" rowspan="3" style="vertical-align: middle;">
+                            <div class="control">
+                                <button class="button is-light" @click="applyLiveValues" :disabled="recordingStarted || !lastData"><i class="fas fa-plane"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="vertical-align: middle;">Heading [&deg;]</td>
+                        <td>
+                            <div class="control">
+                                <input :class="headingInputClass" v-model="selectedHeading" type="number" min="0" max="359" step="1" :disabled="recordingStarted">
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="vertical-align: middle;">Airspeed [kts]</td>
+                        <td>
+                            <div class="control">
+                                <input :class="airspeedInputClass" v-model="selectedAirspeed" type="number" min="0" max="1000" step="1" value="100" :disabled="recordingStarted">
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Result -->
+            <div class="subtitle has-text-white">Recorder</div>
+            <div class="box">
+                <table class="table">
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            <div class="control">
+                                <button class="button has-text-white has-background-success-dark" @click="startRecording" :disabled="recordingStarted || !validInputValues"><i
+                                        class="fas fa-play"></i></button>
+                                <button class="button has-text-white has-background-danger-dark" @click="stopRecording" :disabled="!recording"><i class="fas fa-stop"></i></button>
+                                <button class="button has-text-white has-background-warning-dark" @click="resetRecording" :disabled="!isResettable"><i
+                                        class="fas fa-undo"></i></button>
+                            </div>
+                        </td>
+                        <td class="has-text-centered" style="vertical-align: middle;">
+                            <span>Time</span><br><span>{{ recordingTime }}s</span>
+                        </td>
+                        <td class="has-text-centered" style="vertical-align: middle;">
+                            <span>Samples</span><br><span>{{ sampleCount }}</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="box">
+                <table class="table">
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th>selected</th>
+                        <th>standard</th>
+                        <th>current</th>
+                        <th>recorded</th>
+                        <th>evaluation</th>
+                    </tr>
+                    <tr>
+                        <td>Altitude [ft]</td>
+                        <td>{{ fmtRequiredAltitude }}</td>
+                        <td>{{ fmtAbsDeltaAltitude }}</td>
+                        <td>{{ fmtCurrentAltitude }}</td>
+                        <td><span :class="altitudeMaxDeltaClass">{{ fmtMaxDeltaAltitude }}</span> / <span :class="altitudeMinDeltaClass">{{ fmtMinDeltaAltitude }}</span></td>
+                        <td><span :class="altitudeResultClass">{{ altitudeResult }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Heading [&deg;]</td>
+                        <td>{{ fmtRequiredHeading }}</td>
+                        <td>{{ fmtAbsDeltaHeading }}</td>
+                        <td>{{ fmtCurrentHeading }}</td>
+                        <td><span :class="headingTotalClass">{{ fmtTotalHeading }}</span></td>
+                        <td><span :class="headingResultClass">{{ headingResult }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Airspeed [kts]</td>
+                        <td>{{ fmtRequiredAirspeed }}</td>
+                        <td>{{ fmtAbsDeltaAirspeed }}</td>
+                        <td>{{ fmtCurrentAirspeed }}</td>
+                        <td><span :class="airspeedMaxDeltaClass">{{ fmtMaxDeltaAirspeed }}</span> / <span :class="airspeedMinDeltaClass">{{ fmtMinDeltaAirspeed }}</span></td>
+                        <td><span :class="airspeedResultClass">{{ airspeedResult }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Bank [&deg;]</td>
+                        <td>{{ fmtRequiredBank }}</td>
+                        <td>{{ fmtAbsDeltaBank }}</td>
+                        <td>{{ fmtCurrentBank }}</td>
+                        <!-- <td><span :class="bankMaxDeltaClass">{{ fmtMaxDeltaBank }}</span> / <span :class="bankMinDeltaClass">{{ fmtMinDeltaBank }}</span></td> -->
+                        <td><span :class="bankMinMaxDeltaClass">{{ fmtMinMaxDeltaBank }}</span></td>
+                        <td><span :class="bankResultClass">{{ bankResult }}</span></td>
+                    </tr>
+                </table>
+            </div>
+            </section>
+
+            <div class="section is-flex">
+                &nbsp;
+            </div>
+            <footer class="footer has-background-dark">
+                <div class="content has-text-centered has-text-white">
+                    <p>
+                        GoPilot
+                    </p>
+                </div>
+            </footer>
+
         </div>
     </div>
 
     <script src="https://unpkg.com/vue"></script>
+    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
+    <!-- <script src="/assets/js/experimental/recorder.js"></script> -->
+    <!-- <script src="/assets/js/experimental/main.js"></script> -->
+
+    <script src="/assets/js/experimental/util.js"></script>
+    <script src="/assets/js/experimental/app.js"></script>
+    <script src="/assets/js/experimental/main.js"></script>
 </body>
 
 </html>
