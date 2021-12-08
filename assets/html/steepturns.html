@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Experimental</title>
+    <title>Steep Turns Maneuver</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.15.4/css/all.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
@@ -32,6 +32,9 @@
             <div class="hero-body">
                 <p class="title has-text-white">
                     {{title}}
+                </p>
+                <p class="subtitle has-text-white">
+                    {{subtitle}}
                 </p>
             </div>
         </section>
@@ -139,7 +142,6 @@
                         <td>{{ fmtRequiredBank }}</td>
                         <td>{{ fmtAbsDeltaBank }}</td>
                         <td>{{ fmtCurrentBank }}</td>
-                        <!-- <td><span :class="bankMaxDeltaClass">{{ fmtMaxDeltaBank }}</span> / <span :class="bankMinDeltaClass">{{ fmtMinDeltaBank }}</span></td> -->
                         <td><span :class="bankMinMaxDeltaClass">{{ fmtMinMaxDeltaBank }}</span></td>
                         <td><span :class="bankResultClass">{{ bankResult }}</span></td>
                     </tr>
@@ -153,7 +155,7 @@
             <footer class="footer has-background-dark">
                 <div class="content has-text-centered has-text-white">
                     <p>
-                        GoPilot
+                        ¯\_(ツ)_/¯
                     </p>
                 </div>
             </footer>
@@ -163,12 +165,9 @@
 
     <script src="https://unpkg.com/vue"></script>
     <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
-    <!-- <script src="/assets/js/experimental/recorder.js"></script> -->
-    <!-- <script src="/assets/js/experimental/main.js"></script> -->
-
-    <script src="/assets/js/experimental/util.js"></script>
-    <script src="/assets/js/experimental/app.js"></script>
-    <script src="/assets/js/experimental/main.js"></script>
+    <script src="/assets/js/steepturns/util.js"></script>
+    <script src="/assets/js/steepturns/app.js"></script>
+    <script src="/assets/js/steepturns/main.js"></script>
 </body>
 
 </html>

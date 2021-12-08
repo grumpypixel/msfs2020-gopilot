@@ -4,7 +4,8 @@ var vue = new Vue({
     simvars: App.simvars,
     monikers: App.monikers,
     data: {
-        title: "Experimental",
+        title: "Steep Turns Maneuver",
+        subtitle: "Preview Version",
         loading: true,
         recorder: new Recorder(),
         recording: false,
@@ -31,11 +32,9 @@ var vue = new Vue({
 
         minDeltaAltitude: null,
         minDeltaAirspeed: null,
-        // minDeltaBank: null,
 
         maxDeltaAltitude: null,
         maxDeltaAirspeed: null,
-        // maxDeltaBank: null,
         minMaxDeltaBank: null,
 
         fmtRequiredAltitude: null,
@@ -54,11 +53,9 @@ var vue = new Vue({
 
         altitudeMinDeltaClass: App.constants.tagNormalClass,
         airspeedMinDeltaClass: App.constants.tagNormalClass,
-        // bankMinDeltaClass: App.constants.tagNormalClass,
 
         altitudeMaxDeltaClass: App.constants.tagNormalClass,
         airspeedMaxDeltaClass: App.constants.tagNormalClass,
-        // bankMaxDeltaClass: App.constants.tagNormalClass,
 
         bankMinMaxDeltaClass: App.constants.tagNormalClass,
 
