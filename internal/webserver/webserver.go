@@ -27,7 +27,7 @@ func NewWebServer(address string, shutdown chan bool) *WebServer {
 	return server
 }
 
-func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
+func (ws *WebServer) Run(routes []Route, staticAssetsDir string) {
 	// Serve static files: https://golangcode.com/serve-static-assets-using-the-mux-router/
 	router := mux.NewRouter().StrictSlash(true)
 	router.
@@ -39,7 +39,7 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 	}
 
 	server := &http.Server{
-		Addr:         webs.address,
+		Addr:         ws.address,
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
@@ -47,13 +47,9 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 	}
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			log.Error(err)
+		if _, ok := (<-ws.shutdown); !ok {
+			log.Error("channel is closed")
 		}
-	}()
-
-	go func() {
-		<-webs.shutdown
 		var wait time.Duration = time.Second * 15
 		ctx, cancel := context.WithTimeout(context.Background(), wait)
 		defer cancel()
@@ -64,5 +60,11 @@ func (webs *WebServer) Run(routes []Route, staticAssetsDir string) {
 		// Optionally, you could run srv.Shutdown in a goroutine and block on
 		// <-ctx.Done() if your application should wait for other services
 		// to finalize based on context cancellation.
+	}()
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Error(err)
+		}
 	}()
 }

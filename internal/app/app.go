@@ -125,6 +125,8 @@ func (app *App) Run() error {
 	if err := app.disconnect(); err != nil {
 		return err
 	}
+
+	log.Info("Taking a quick nap...")
 	time.Sleep(shutdownDelay * time.Second)
 	return nil
 }
@@ -213,9 +215,9 @@ func (app *App) connect(name string, retryInterval, timeout time.Duration) error
 			} else {
 				return nil
 			}
-
 		case <-timeoutTimer.C:
 			return fmt.Errorf("establishing a connection with the simulator timed out painfully")
+		default:
 		}
 	}
 }
@@ -288,6 +290,7 @@ func (app *App) handleSocketMessages() {
 					log.Warn("Received unknown message with type: %s\n data: %v\n sender: %s\n", msg.Type, msg.Data, connID)
 				}
 			}
+		default:
 		}
 	}
 }
@@ -571,6 +574,7 @@ func (app *App) Broadcast(broadcastInterval time.Duration, stop chan interface{}
 				log.Error(err)
 			}
 		case <-stop:
+			log.Info("Stopped broadcasting")
 			return
 		}
 	}
