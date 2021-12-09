@@ -10,6 +10,7 @@ import (
 	"msfs2020-gopilot/internal/filepacker"
 	"os"
 	"path"
+	"runtime/debug"
 	"time"
 
 	"github.com/common-nighthawk/go-figure"
@@ -46,6 +47,12 @@ func init() {
 func main() {
 	welcome()
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Warnf("stacktrace from panic: %s", string(debug.Stack()))
+		}
+	}()
+
 	var configFilePath string
 	flag.StringVar(&configFilePath, "cfg", defaultConfigFilePath, "Config file location")
 	flag.Parse()
@@ -59,8 +66,6 @@ func main() {
 	prettyPrint("Configuration:\n", cfg)
 
 	log.SetLevel(getLogLevel(cfg.LogLevel))
-
-	log.Trace("TRACE!!!!")
 
 	if err := checkInstallation(cfg.SimConnectDLLPath); err != nil {
 		log.Fatal(err)

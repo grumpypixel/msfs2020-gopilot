@@ -1,6 +1,9 @@
 #!/bin/bash
 
 EXEC=./gopilot.exe
+
+# rm $EXEC
+
 if [ ! -f "$EXEC" ]; then
   echo "$EXEC does not exists..."
   ./scripts/build.sh
