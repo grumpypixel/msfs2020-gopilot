@@ -36,7 +36,13 @@ Run GoPilot:
 $ gopilot.exe
 ```
 
-Or run GoPilot with your own configuration file:
+Or explicitly specify the config file:
+
+```console
+$ gopilot.exe --cfg configs/config.yml
+```
+
+Or run with your own configuration file:
 
 ```console
 $ gopilot.exe --cfg configs/my-config-file.yml
@@ -60,7 +66,7 @@ Airport Finder:\
 ## Web Server API
 
 The following routes are available:
-* `/` or `/vfrmap` opens the VFR map
+* `/vfrmap` or `/` opens the VFR map
 * `/airports` opens the Airport Finder
 * `/teleport` opens the Teleport Service. Be advised not to teleport yourself into the ground mistakenly.
 * `/mehmap` opens a plain & simple map without distractions. (No HUD. No nothing. Meh.)
