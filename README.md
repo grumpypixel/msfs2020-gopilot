@@ -73,6 +73,7 @@ The following routes are available:
 * `/setdata` opens an *experimental* and *hideous* page where you can manually set data on the *sim object*. DO NOT USE THIS if you don't know what you're doing. This might (and probably will) CRASH your simulator. Seriously.
 * `/simvars` displays all registered simulation variables (no auto-update)
 * `/debug` displays debug information (also no auto-update)
+* `/ws` is the WebSocket endpoint used by the web pages for live simulator data
 
 Examples:
 * `http://localhost:8888/vfrmap` or simply: `http://localhost:8888`
